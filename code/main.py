@@ -29,7 +29,8 @@ class Main:
 
     async def send_message(self, channel_id, *, message):
         channel = self.bot.get_channel(channel_id)
-        await channel.send(message)
+        embed = discord.Embed(description=message, color=discord.Color.blue()) # Create an embed with a blue color
+        await channel.send(embed=embed)  # Send the embed
 
 
 def setup_bot():
@@ -53,11 +54,12 @@ def setup_bot():
 
         flagged_categories = await main.get_flagged_categories(text=message.content)
         if flagged_categories:
-            await main.send_message(channel_id=1225763660002234460, message=f"Harmful message: `{message.content}`.\n"
-                                                                            f" `{flagged_categories}`.\n "
-                                                                            f"\nSent by: `{message.author}` in"
-                                                                            f" `{message.channel}` at "
-                                                                            f"`{message.created_at}`.")
+            await main.send_message(channel_id=1226173674416242728,
+                                    message=f"Harmful message: `{message.content}`.\n"
+                                            f" `{flagged_categories}`.\n "
+                                            f"Sent by: `{message.author}` in"
+                                            f" `{message.channel}` at "
+                                            f"`{message.created_at}`.")
             await message.add_reaction("⚠️")
         print(flagged_categories)
         await bot.process_commands(message)
