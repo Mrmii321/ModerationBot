@@ -7,10 +7,18 @@ from openai import OpenAI
 # Load environment variables
 load_dotenv()
 
+
+class MyView(discord.ui.View):
+    @discord.ui.button(label="Delete message", style=discord.ButtonStyle.primary, emoji="😎")
+    async def button_callback(self, button, interaction):
+        await interaction.response.send_message("You clicked the button!")
+
+
 class Main:
-    def __init__(self, ai_key):
+    def __init__(self, ai_key, bot):
         self.status = discord.Game(name="Type !hello")
         self.client = OpenAI(api_key=ai_key)
+        self.bot = bot
 
     async def get_flagged_categories(self, text):
         response = self.client.moderations.create(input=text)
@@ -19,12 +27,17 @@ class Main:
         flagged_categories = {category: flagged for category, flagged in results['categories'].items() if flagged}
         return flagged_categories
 
+    async def send_message(self, channel_id, *, message):
+        channel = self.bot.get_channel(channel_id)
+        await channel.send(message)
+
+
 def setup_bot():
     intents = discord.Intents.all()
     bot = commands.Bot(command_prefix='!', intents=intents)
     ai_key = os.getenv("OPENAI_API_KEY")
 
-    main = Main(ai_key)
+    main = Main(ai_key, bot)
 
     @bot.event
     async def on_ready():
@@ -38,9 +51,15 @@ def setup_bot():
         if message.author == bot.user:
             return
 
-        flagged_categories = await main.get_flagged_categories(text=message.content)  # Process the message
-        print(flagged_categories)  # Assuming you want to print the flagged categories for debugging
-        await bot.process_commands(message)  # Needed for command handling
+        flagged_categories = await main.get_flagged_categories(text=message.content)
+        if flagged_categories:
+            await main.send_message(channel_id=1225763660002234460, message=f"Harmful message: `{flagged_categories}`. "
+                                                                            f"\nSent by: `{message.author}` in"
+                                                                            f" `{message.channel}` at "
+                                                                            f"`{message.created_at}`.")
+            await message.add_reaction("⚠️")
+        print(flagged_categories)
+        await bot.process_commands(message)
 
     return bot
 
