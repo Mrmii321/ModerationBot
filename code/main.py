@@ -53,7 +53,8 @@ def setup_bot():
 
         flagged_categories = await main.get_flagged_categories(text=message.content)
         if flagged_categories:
-            await main.send_message(channel_id=1225763660002234460, message=f"Harmful message: `{flagged_categories}`. "
+            await main.send_message(channel_id=1225763660002234460, message=f"Harmful message: `{message.content}`.\n"
+                                                                            f" `{flagged_categories}`.\n "
                                                                             f"\nSent by: `{message.author}` in"
                                                                             f" `{message.channel}` at "
                                                                             f"`{message.created_at}`.")
@@ -62,6 +63,7 @@ def setup_bot():
         await bot.process_commands(message)
 
     return bot
+
 
 if __name__ == "__main__":
     bot_token = os.getenv("BOT_TOKEN")
