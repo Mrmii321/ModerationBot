@@ -8,10 +8,31 @@ from openai import OpenAI
 load_dotenv()
 
 
+# Buttons are broken for now.
+"""
+class DeleteButton(discord.ui.Button):
+    def __init__(self, label, custom_id):
+        super().__init__(label=label, custom_id=custom_id)
+
+    async def callback(self, interaction: discord.Interaction):
+        delete_message()
+
+
+
+class PardonButton(discord.ui.Button):
+    def __init__(self, label, custom_id):
+        super().__init__(label=label, custom_id=custom_id)
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.message.clear_reaction(emoji="⚠️")
+
+
 class MyView(discord.ui.View):
-    @discord.ui.button(label="Delete message", style=discord.ButtonStyle.primary, emoji="😎")
-    async def button_callback(self, button, interaction):
-        await interaction.response.send_message("You clicked the button!")
+    def __init__(self):
+        super().__init__()
+        self.add_item(DeleteButton(label="Delete message", custom_id="delete_message"))
+        self.add_item(PardonButton(label="Pardon message", custom_id="pardon_message"))
+"""
 
 
 class Main:
@@ -29,8 +50,13 @@ class Main:
 
     async def send_message(self, channel_id, *, message):
         channel = self.bot.get_channel(channel_id)
-        embed = discord.Embed(description=message, color=discord.Color.blue()) # Create an embed with a blue color
+        embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful message")
         await channel.send(embed=embed)  # Send the embed
+
+
+def delete_message(message):
+    message.delete()
+
 
 
 def setup_bot():
@@ -55,11 +81,11 @@ def setup_bot():
         flagged_categories = await main.get_flagged_categories(text=message.content)
         if flagged_categories:
             await main.send_message(channel_id=1226173674416242728,
-                                    message=f"Harmful message: `{message.content}`.\n"
-                                            f" `{flagged_categories}`.\n "
-                                            f"Sent by: `{message.author}` in"
-                                            f" `{message.channel}` at "
-                                            f"`{message.created_at}`.")
+                                    message=f"Harmful message: {message.content}.\n"
+                                            f"Category: {flagged_categories}.\n "
+                                            f"Sent by: {message.author}.\n"
+                                            f"Channel: {message.channel}.\n"
+                                            f"Timespamp: {message.created_at}.")
             await message.add_reaction("⚠️")
         print(flagged_categories)
         await bot.process_commands(message)
