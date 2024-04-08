@@ -53,12 +53,6 @@ class Main:
         embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful message")
         await channel.send(embed=embed)  # Send the embed
 
-
-def delete_message(message):
-    message.delete()
-
-
-
 def setup_bot():
     intents = discord.Intents.all()
     bot = commands.Bot(command_prefix='!', intents=intents)
@@ -80,7 +74,7 @@ def setup_bot():
 
         flagged_categories = await main.get_flagged_categories(text=message.content)
         if flagged_categories:
-            await main.send_message(channel_id=1226173674416242728,
+            await main.send_message(channel_id="Remove quote marks and replace with channel ID",
                                     message=f"Harmful message: {message.content}.\n"
                                             f"Category: {flagged_categories}.\n "
                                             f"Sent by: {message.author}.\n"
