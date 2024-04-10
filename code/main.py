@@ -2,6 +2,11 @@ import discord
 from discord.ext import commands
 from openai import OpenAI
 import json
+import logging
+
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 
 # Buttons are broken for now.
@@ -42,12 +47,14 @@ class Main:
         response_dict = response.model_dump()
         results = response_dict['results'][0]
         flagged_categories = {category: flagged for category, flagged in results['categories'].items() if flagged}
+        logging.info(f"Checked text {text}")
         return flagged_categories
 
     async def send_message(self, channel_id, *, message):
         channel = self.bot.get_channel(channel_id)
         embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful message")
         await channel.send(embed=embed)  # Send the embed
+        logging.info(f"Created Embed for harmful message {message}")
 
 
 def setup_bot():
@@ -60,7 +67,7 @@ def setup_bot():
     @bot.event
     async def on_ready():
         """Logs in the bot."""
-        print(f'Logged in as {bot.user.name}')
+        logging.info(f"Logged in as {bot.user.name}")
         await bot.change_presence(activity=main.status)
 
     @bot.event
@@ -83,8 +90,11 @@ def setup_bot():
 
         with open("nono_words.json", "r") as file:
             data = json.loads(file.read())
+        words = message.content.split()
+        print(words)
         for word in data:
-            if word in (f"{message.content} "):
+            if word in words:
+                logging.info(f"Bad word ({word}) detected")
                 await message.delete()
                 await send_message(channel_id=999718985098600539,
                                    message=f"Harmful word: {word}.\n"
