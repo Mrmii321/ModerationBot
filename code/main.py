@@ -3,6 +3,7 @@ from discord.ext import commands
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+import json
 
 # Load environment variables
 load_dotenv()
@@ -83,6 +84,12 @@ def setup_bot():
             await message.add_reaction("⚠️")
         print(flagged_categories)
         await bot.process_commands(message)
+
+        with open("nono_words.json", "r") as file:
+            data = json.loads(file.read())
+        for word in data:
+            if word in message.content:
+                await message.channel.send("Bad word detected. `If you see this outside of testing, contact me asap`")
 
     return bot
 
