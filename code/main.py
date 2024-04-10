@@ -49,6 +49,7 @@ class Main:
         embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful message")
         await channel.send(embed=embed)  # Send the embed
 
+
 def setup_bot():
     intents = discord.Intents.all()
     bot = commands.Bot(command_prefix='!', intents=intents)
@@ -84,8 +85,21 @@ def setup_bot():
             data = json.loads(file.read())
         for word in data:
             if word in message.content:
-                await message.channel.send("Bad word detected.")
-                print(f"Bad word detected: {word}")
+                await message.delete()
+                await send_message(channel_id=999718985098600539,
+                                   message=f"Harmful word: {word}.\n"
+                                           f"Message: {message.content}.\n "
+                                           f"Sent by: {message.author}.\n"
+                                           f"Channel: {message.channel}.\n"
+                                           f"Timespamp: {message.created_at}."
+                                   )
+                await message.channel.send(f"Please do not say vulgar things {message.author}")
+
+
+    async def send_message(channel_id, message):
+        channel = bot.get_channel(channel_id)
+        embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful word in message")
+        await channel.send(embed=embed)
 
     return bot
 
