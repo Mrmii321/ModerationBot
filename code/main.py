@@ -84,7 +84,7 @@ def setup_bot():
         with open("nono_words.json", "r") as file:
             data = json.loads(file.read())
         for word in data:
-            if word in message.content:
+            if word in (f"{message.content} "):
                 await message.delete()
                 await send_message(channel_id=999718985098600539,
                                    message=f"Harmful word: {word}.\n"
