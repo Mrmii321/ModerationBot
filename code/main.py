@@ -61,6 +61,8 @@ def setup_bot():
     intents = discord.Intents.all()
     bot = commands.Bot(command_prefix='!', intents=intents)
     ai_key = "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"
+    bypass_roles = ["Owner", "Admin", "General Manager", "Developer", "Community manager", "Staff manager",
+                    "Events Manager", "Consultant", "Senior Moderator"]
 
     main = Main(ai_key, bot)
 
@@ -73,37 +75,42 @@ def setup_bot():
     @bot.event
     async def on_message(message):
         """Handles incoming messages."""
-        if message.author == bot.user:
-            return
+        user_roles = [role.name for role in message.author.roles]
+        if not any(role in user_roles for role in bypass_roles):
+            if message.author == bot.user:
+                return
 
-        flagged_categories = await main.get_flagged_categories(text=message.content)
-        if flagged_categories:
-            await main.send_message(channel_id=1226672487966834778,
-                                    message=f"Harmful message: {message.content}.\n"
-                                            f"Category: {flagged_categories}.\n "
-                                            f"Sent by: {message.author}.\n"
-                                            f"Channel: {message.channel}.\n"
-                                            f"Timespamp: {message.created_at}.")
-            await message.add_reaction("⚠️")
-        print(flagged_categories)
-        await bot.process_commands(message)
+            flagged_categories = await main.get_flagged_categories(text=message.content)
+            if flagged_categories:
+                await main.send_message(channel_id=1226672487966834778,
+                                        message=f"Harmful message: {message.content}.\n"
+                                                f"Category: {flagged_categories}.\n "
+                                                f"Sent by: {message.author}.\n"
+                                                f"Channel: {message.channel}.\n"
+                                                f"Timespamp: {message.created_at}.")
+                await message.add_reaction("⚠️")
+            print(flagged_categories)
+            await bot.process_commands(message)
 
-        with open("nono_words.json", "r") as file:
-            data = json.loads(file.read())
-        words = message.content.split()
-        print(words)
-        for word in data:
-            if word in words:
-                logging.info(f"Bad word ({word}) detected")
-                await message.delete()
-                await send_message(channel_id=999718985098600539,
-                                   message=f"Harmful word: {word}.\n"
-                                           f"Message: {message.content}.\n "
-                                           f"Sent by: {message.author}.\n"
-                                           f"Channel: {message.channel}.\n"
-                                           f"Timespamp: {message.created_at}."
-                                   )
-                await message.channel.send(f"Please do not say vulgar things {message.author}")
+            with open("nono_words.json", "r") as file:
+                data = json.loads(file.read())
+            words = message.content.split()
+            print(words)
+            for word in data:
+                if word in words:
+                    logging.info(f"Bad word ({word}) detected")
+                    await message.delete()
+                    await send_message(channel_id=999718985098600539,
+                                       message=f"Harmful word: {word}.\n"
+                                               f"Message: {message.content}.\n "
+                                               f"Sent by: {message.author}.\n"
+                                               f"Channel: {message.channel}.\n"
+                                               f"Timespamp: {message.created_at}."
+                                       )
+                    await message.channel.send(f"Please do not say vulgar things {message.author}")
+
+        else:
+            logging.info(f"Message sent by {message.author} was ignored through senior staff status")
 
 
     async def send_message(channel_id, message):
