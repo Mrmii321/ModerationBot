@@ -1,12 +1,7 @@
 import discord
 from discord.ext import commands
-import os
-from dotenv import load_dotenv
 from openai import OpenAI
 import json
-
-# Load environment variables
-load_dotenv()
 
 
 # Buttons are broken for now.
@@ -57,7 +52,7 @@ class Main:
 def setup_bot():
     intents = discord.Intents.all()
     bot = commands.Bot(command_prefix='!', intents=intents)
-    ai_key = os.getenv("OPENAI_API_KEY")
+    ai_key = "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"
 
     main = Main(ai_key, bot)
 
@@ -75,7 +70,7 @@ def setup_bot():
 
         flagged_categories = await main.get_flagged_categories(text=message.content)
         if flagged_categories:
-            await main.send_message(channel_id="Remove quote marks and replace with channel ID",
+            await main.send_message(channel_id=1226672487966834778,
                                     message=f"Harmful message: {message.content}.\n"
                                             f"Category: {flagged_categories}.\n "
                                             f"Sent by: {message.author}.\n"
@@ -89,12 +84,12 @@ def setup_bot():
             data = json.loads(file.read())
         for word in data:
             if word in message.content:
-                await message.channel.send("Bad word detected. `If you see this outside of testing, contact me asap`")
+                await message.channel.send("Bad word detected.")
+                print(f"Bad word detected: {word}")
 
     return bot
 
 
 if __name__ == "__main__":
-    bot_token = os.getenv("BOT_TOKEN")
     bot = setup_bot()
-    bot.run(bot_token)
+    bot.run("OTc0NDc1MTYxOTI1NDU5OTk4.G6M3rx.sp4a_xyFDoJHws5hpGJ3w28pab9A-ETfNxOaRk")
