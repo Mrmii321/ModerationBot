@@ -1,9 +1,10 @@
-import discord
-from discord.ext import commands
-from openai import OpenAI
 import json
 import logging
 
+import discord
+from discord.ext import commands
+import mariadb
+from openai import OpenAI
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -57,6 +58,40 @@ class Main:
         logging.info(f"Created Embed for harmful message {message}")
 
 
+class MySQL:
+    def __init__(self):
+        self.host = "172.18.0.1"
+        self.user = "u26_tWY7ABymem"
+        self.password = "Ie9euLhOTHdxBNb!8H+wS4kh"
+        self.database = "s26_database"
+
+
+    def connect_to_db(self):
+        db = mariadb.connect(
+            host=self.host,
+            user=self.user,
+            passwd=self.password,
+            database=self.database
+        )
+
+        cursor = db.cursor()
+
+        create_table = (f"""CREATE TABLE IF NOT EXISTS messages (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            message TEXT,
+                            author VARCHAR(255),
+                            channel INT,
+                            time_sent VARCHAR(255),
+                            flags VARCHAR(500)
+                            """)
+
+        cursor.execute(create_table)
+        db.commit()
+
+
+my_sql = MySQL()
+
+
 def setup_bot():
     intents = discord.Intents.all()
     bot = commands.Bot(command_prefix='!', intents=intents)
@@ -66,11 +101,20 @@ def setup_bot():
 
     main = Main(ai_key, bot)
 
+
+    @bot.command()
+    async def shutdown(ctx, message):
+        await ctx.send("Shutting down AI systems")
+        quit()
+
     @bot.event
     async def on_ready():
         """Logs in the bot."""
         logging.info(f"Logged in as {bot.user.name}")
         await bot.change_presence(activity=main.status)
+
+        bot_spam_channel = bot.get_channel(999678340724166686)
+        await bot_spam_channel.send(f"{my_sql.connect_to_db()}")
 
     @bot.event
     async def on_message(message):
@@ -117,6 +161,7 @@ def setup_bot():
         channel = bot.get_channel(channel_id)
         embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful word in message")
         await channel.send(embed=embed)
+
 
     return bot
 
