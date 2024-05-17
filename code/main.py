@@ -186,12 +186,11 @@ def setup_bot():
         members = guild_id.members
         for member in members:
 
-            message = (
-                f"**WARNING **"
-                f"User {member.mention} has been flagged as a potential spammer."
-            )
             if member.public_flags.spammer:
-                embed = discord.Embed(description=message, color=discord.Color.red(), title="**Flagged Account**")
+                message = (
+                    f"User {member.mention} has been flagged as suspicious."
+                )
+                embed = discord.Embed(description=message, color=discord.Color.red(), title="**Suspicious Account**")
 
                 await channel.send(embed=embed)
                 logging.info(f"User {member.name} has been flagged as potential spammer. Sending message to channel.")
@@ -240,7 +239,6 @@ def setup_bot():
     async def check_for_spam_warnings(ctx):
         """Check the server for any potential spammers"""
         await check_for_spammers()
-
 
 
     return bot
