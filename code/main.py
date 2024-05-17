@@ -226,16 +226,24 @@ def setup_bot():
         await ctx.send(embed=embed)
 
 
-    @bot.command(name="myflags")
-    async def check_self_flags(ctx):
-        """Checks your flags"""
-        flag_list = []
-        author = ctx.author
-        flags = author.public_flags
+    @bot.command(name="checkflags")
+    async def check_self_flags(ctx, target):
+        """Checks the flags of a user"""
+        if target is None:
+            flag_list = []
+            author = ctx.author
+            flags = author.public_flags
 
-        for flag in flags:
-            flag_list.append(flag)
-        await ctx.send(flag_list)
+            for flag in flags:
+                flag_list.append(flag)
+            await ctx.send(flag_list)
+        elif target is not None:
+            flag_list = []
+            flags = target.public_flags
+
+            for flag in flags:
+                flag_list.append(flag)
+            await ctx.send(flag_list)
 
 
     @bot.command(name="spamcheck")
