@@ -109,11 +109,6 @@ def setup_bot():
     main = Main(ai_key, bot)
 
 
-    @bot.command()
-    async def shutdown(ctx, message):
-        await ctx.send("Shutting down AI systems")
-        quit()
-
     @bot.event
     async def on_ready():
         """Logs in the bot."""
@@ -203,11 +198,30 @@ def setup_bot():
                 logging.info(f"Member {member} has been flagged as suspicious")
 
 
+    async def send_message(channel_id, message):
+        channel = bot.get_channel(channel_id)
+        embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful word in message")
+        await channel.send(embed=embed)
 
-    @bot.command(name="spamcheck")
-    async def check_for_spam_warnings(ctx):
-        """Check the server for any potential spammers"""
-        await check_for_spammers()
+
+    """Commands are from here below"""
+
+
+    @bot.command()
+    async def shutdown(ctx):
+        await ctx.send("Shutting down AI systems")
+        quit()
+
+
+    @bot.command(name="uptime")
+    async def uptime(ctx):
+
+        message = (
+            f"AutoMod has been online for <t:{start_time}:R>"
+        )
+
+        embed = discord.Embed(description=message, color=discord.Color.green(), title="Uptime")
+        await ctx.send(embed=embed)
 
 
     @bot.command(name="myflags")
@@ -222,24 +236,15 @@ def setup_bot():
         await ctx.send(flag_list)
 
 
-    @bot.command(name="uptime")
-    async def uptime(ctx):
+    @bot.command(name="spamcheck")
+    async def check_for_spam_warnings(ctx):
+        """Check the server for any potential spammers"""
+        await check_for_spammers()
 
-        message = (
-            f"AutoMod has been online for <t:{start_time}:R>"
-        )
-
-        embed = discord.Embed(description=message, color=discord.Color.green(), title="Uptime")
-        await ctx.send(embed=embed)
-
-
-    async def send_message(channel_id, message):
-        channel = bot.get_channel(channel_id)
-        embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful word in message")
-        await channel.send(embed=embed)
 
 
     return bot
+
 
 
 if __name__ == "__main__":
