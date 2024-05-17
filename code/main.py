@@ -2,7 +2,7 @@ import json
 import logging
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import mariadb
 from openai import OpenAI
 
@@ -10,38 +10,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 
-# Buttons are broken for now.
-"""
-class DeleteButton(discord.ui.Button):
-    def __init__(self, label, custom_id):
-        super().__init__(label=label, custom_id=custom_id)
-
-    async def callback(self, interaction: discord.Interaction):
-        delete_message()
-
-
-
-class PardonButton(discord.ui.Button):
-    def __init__(self, label, custom_id):
-        super().__init__(label=label, custom_id=custom_id)
-
-    async def callback(self, interaction: discord.Interaction):
-        await interaction.message.clear_reaction(emoji="⚠️")
-
-
-class MyView(discord.ui.View):
-    def __init__(self):
-        super().__init__()
-        self.add_item(DeleteButton(label="Delete message", custom_id="delete_message"))
-        self.add_item(PardonButton(label="Pardon message", custom_id="pardon_message"))
-"""
-
-
 class Main:
-    def __init__(self, ai_key, bot):
-        self.status = discord.Game(name="Type !hello")
+    def __init__(self, ai_key, bot_class_var):
+        self.status = discord.Game(name="Type =help")
         self.client = OpenAI(api_key=ai_key)
-        self.bot = bot
+        self.bot = bot_class_var
 
     async def get_flagged_categories(self, text):
         response = self.client.moderations.create(input=text)
@@ -57,47 +30,77 @@ class Main:
         await channel.send(embed=embed)  # Send the embed
         logging.info(f"Created Embed for harmful message {message}")
 
+    async def send_message_dm(self, *, message, author):
+        embed = discord.Embed(description=message, color=discord.Color.red(), title="Vulgar message")
+        await author.send(embed=embed)  # Send the embed
+        logging.info(f"Created Embed for harmful message {message}")
 
-class MySQL:
+
+class MariaDB:
     def __init__(self):
-        self.host = "172.18.0.1"
-        self.user = "u26_tWY7ABymem"
-        self.password = "Ie9euLhOTHdxBNb!8H+wS4kh"
-        self.database = "s26_database"
+        self.host = "localhost"
+        self.user = "tybalt"
+        self.password = "OWuq)xg4j7mdU2hr"
+        self.database = "tybalt-logs"
 
 
-    def connect_to_db(self):
-        db = mariadb.connect(
-            host=self.host,
-            user=self.user,
-            passwd=self.password,
-            database=self.database
-        )
+    def log_filter(self, message, author, channel, time_sent):
+        try:
+            db = mariadb.connect(
+                host=self.host,
+                user=self.user,
+                passwd=self.password,
+                database=self.database
+            )
 
-        cursor = db.cursor()
+            cursor = db.cursor()
 
-        create_table = (f"""CREATE TABLE IF NOT EXISTS messages (
-                            id INT AUTO_INCREMENT PRIMARY KEY,
-                            message TEXT,
-                            author VARCHAR(255),
-                            channel INT,
-                            time_sent VARCHAR(255),
-                            flags VARCHAR(500)
-                            """)
+            insert_into_table = (f"""INSERT INTO messages (message, author, channel, time_sent)
+                                VALUES ('{message}', '{author}', '{channel}', '{time_sent}');
+                                """)
+            logging.info(f"Run database command {insert_into_table}")
 
-        cursor.execute(create_table)
-        db.commit()
+            cursor.execute(insert_into_table)
+            db.commit()
+            db.close()
+        except mariadb.Error as e:
+            logging.error(e)
 
 
-my_sql = MySQL()
+    def log_ai(self, message, author, channel, time_sent, flags):
+        try:
+            db = mariadb.connect(
+                host=self.host,
+                user=self.user,
+                passwd=self.password,
+                database=self.database
+            )
+
+            cursor = db.cursor()
+
+            insert_into_table = (f"""INSERT INTO ai_messages (message, author, channel, time_sent, flags)
+                                VALUES ('{message}', '{author}', '{channel}', '{time_sent}', '{flags}');
+                                """)
+            logging.info(f"Run database command {insert_into_table}")
+
+            cursor.execute(insert_into_table)
+            db.commit()
+            db.close()
+            logging.info("Logged AI report do DataBase")
+        except mariadb.Error as e:
+            logging.error(e)
+
+
+maria_db = MariaDB()
 
 
 def setup_bot():
     intents = discord.Intents.all()
-    bot = commands.Bot(command_prefix='!', intents=intents)
+    bot = commands.Bot(command_prefix='==', intents=intents)
     ai_key = "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"
-    bypass_roles = ["Owner", "Admin", "General Manager", "Developer", "Community manager", "Staff manager",
+    bypass_roles = ["Owner", "Admin", "General Manager", "Community manager", "Staff manager",
                     "Events Manager", "Consultant", "Senior Moderator"]
+    debug_role = ["bot debug perms"]
 
     main = Main(ai_key, bot)
 
@@ -113,15 +116,14 @@ def setup_bot():
         logging.info(f"Logged in as {bot.user.name}")
         await bot.change_presence(activity=main.status)
 
-        bot_spam_channel = bot.get_channel(999678340724166686)
-        await bot_spam_channel.send(f"{my_sql.connect_to_db()}")
 
     @bot.event
     async def on_message(message):
         """Handles incoming messages."""
         user_roles = [role.name for role in message.author.roles]
-        if not any(role in user_roles for role in bypass_roles):
-            if message.author == bot.user:
+
+        if not any(role in user_roles for role in bypass_roles) or any(role in user_roles for role in debug_role):
+            if message.author == bot.user or message.author == bot.user:
                 return
 
             flagged_categories = await main.get_flagged_categories(text=message.content)
@@ -132,18 +134,24 @@ def setup_bot():
                                                 f"Sent by: {message.author}.\n"
                                                 f"Channel: {message.channel}.\n"
                                                 f"Timespamp: {message.created_at}.")
+                logging.info(f"User {message.author} has been privately messaged about their vulgar message")
                 await message.add_reaction("⚠️")
-            print(flagged_categories)
+                key = list(flagged_categories.keys())[0]
+                maria_db.log_ai(message=message.content,
+                                author=message.author,
+                                channel=message.channel,
+                                time_sent=message.created_at,
+                                flags=key.strip("''"))
+
             await bot.process_commands(message)
+
 
             with open("nono_words.json", "r") as file:
                 data = json.loads(file.read())
             words = message.content.split()
-            print(words)
             for word in data:
                 if word in words:
                     logging.info(f"Bad word ({word}) detected")
-                    await message.delete()
                     await send_message(channel_id=999718985098600539,
                                        message=f"Harmful word: {word}.\n"
                                                f"Message: {message.content}.\n "
@@ -151,10 +159,56 @@ def setup_bot():
                                                f"Channel: {message.channel}.\n"
                                                f"Timespamp: {message.created_at}."
                                        )
-                    await message.channel.send(f"Please do not say vulgar things {message.author}")
+                    await message.channel.send(f"Please do not say vulgar things {message.author.mention}")
+                    maria_db.log_filter(message=message.content,
+                                        author=message.author,
+                                        channel=message.channel,
+                                        time_sent=message.created_at)
+                    await message.delete()
+
+            else:
+                logging.info(f"Message was innocent")
 
         else:
             logging.info(f"Message sent by {message.author} was ignored through senior staff status")
+
+
+    @tasks.loop(hours=1)
+    async def check_for_spammers():
+        guild_id = bot.get_guild(272148882048155649)
+        channel = bot.get_channel(1239179624689434716)
+        members = guild_id.members
+        for member in members:
+
+            message = (
+                f"**WARNING **"
+                f"User {member.mention} has been flagged as a potential spammer."
+            )
+            if member.public_flags.spammer:
+                embed = discord.Embed(description=message, color=discord.Color.red(), title="**Flagged Account**")
+
+                await channel.send(embed=embed)
+                logging.info(f"User {member.name} has been flagged as potential spammer. Sending message to channel.")
+                logging.info(f"Member {member} has been flagged as suspicious")
+
+
+
+    @bot.command()
+    async def spamcheck(ctx):
+        """Check the server for any potential spammers"""
+        await check_for_spammers()
+
+
+    @bot.command()
+    async def check_self_flags(ctx):
+        """Checks your flags"""
+        flag_list = []
+        author = ctx.author
+        flags = author.public_flags
+
+        for flag in flags:
+            flag_list.append(flag)
+        await ctx.send(flag_list)
 
 
     async def send_message(channel_id, message):
