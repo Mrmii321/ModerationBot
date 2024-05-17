@@ -133,7 +133,7 @@ def setup_bot():
         user_roles = [role.name for role in message.author.roles]
 
         if not any(role in user_roles for role in bypass_roles) or any(role in user_roles for role in debug_role):
-            if message.author == bot.user or message.author == discord.Message.bot:
+            if message.author == bot.user or message.author == discord.Member.bot:
                 return
 
             flagged_categories = await main.get_flagged_categories(text=message.content)
