@@ -57,9 +57,9 @@ class MariaDB:
 
             cursor = db.cursor()
 
-            insert_into_table = (f"""INSERT INTO messages (message, author, channel, time_sent, word)
-                                VALUES ('{message}', '{author}', '{channel}', '{time_sent}', '{harmful_word}');
-                                """)
+            insert_into_table = (f"INSERT INTO ai_messages (message, author, channel, time_sent, word)",
+                                 "VALUES ('%s', '%s', '%s', '%s', '%s;", message, author, channel, time_sent,
+                                 harmful_word)
             logging.info(f"Run database command {insert_into_table}")
 
             cursor.execute(insert_into_table)
@@ -81,9 +81,8 @@ class MariaDB:
 
             cursor = db.cursor()
 
-            insert_into_table = (f"""INSERT INTO ai_messages (message, author, channel, time_sent, flags)
-                                VALUES ('{message}', '{author}', '{channel}', '{time_sent}', '{flags}');
-                                """)
+            insert_into_table = (f"INSERT INTO ai_messages (message, author, channel, time_sent, flags)",
+                                 "VALUES ('%s', '%s', '%s', '%s', '%s;", message, author, channel, time_sent, flags)
             logging.info(f"Ran AI database command {insert_into_table}")
 
             cursor.execute(insert_into_table)
