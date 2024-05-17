@@ -45,7 +45,6 @@ class MariaDB:
         self.password = "OWuq)xg4j7mdU2hr"
         self.database = "tybalt-logs"
 
-
     def log_filter(self, message, author, channel, time_sent, harmful_word):
         try:
             db = mariadb.connect(
@@ -57,18 +56,19 @@ class MariaDB:
 
             cursor = db.cursor()
 
-            insert_into_table = (f"INSERT INTO ai_messages (message, author, channel, time_sent, word)",
-                                 "VALUES ('%s', '%s', '%s', '%s', '%s;", message, author, channel, time_sent,
-                                 harmful_word)
-            logging.info(f"Run database command {insert_into_table}")
-
-            cursor.execute(insert_into_table)
+            insert_into_table = ("INSERT INTO messages (message, author, channel, time_sent, word) "
+                                 "VALUES (?, ?, ?, ?, ?)")
+            cursor.execute(insert_into_table, (message, author.name, channel.name, time_sent, harmful_word))
+            logging.info(f"Run database command {insert_into_table} with values {message},"
+                         f" {author.name},"
+                         f" {channel.name},"
+                         f" {time_sent},"
+                         f" {harmful_word}")
             db.commit()
             db.close()
-            logging.info(f"Ran bad word database command {insert_into_table}")
+            logging.info(f"Logged harmful word to database")
         except mariadb.Error as e:
             logging.error(e)
-
 
     def log_ai(self, message, author, channel, time_sent, flags):
         try:
@@ -81,14 +81,17 @@ class MariaDB:
 
             cursor = db.cursor()
 
-            insert_into_table = (f"INSERT INTO ai_messages (message, author, channel, time_sent, flags)",
-                                 "VALUES ('%s', '%s', '%s', '%s', '%s;", message, author, channel, time_sent, flags)
-            logging.info(f"Ran AI database command {insert_into_table}")
-
-            cursor.execute(insert_into_table)
+            insert_into_table = ("INSERT INTO ai_messages (message, author, channel, time_sent, flags) "
+                                 "VALUES (?, ?, ?, ?, ?)")
+            cursor.execute(insert_into_table, (message, author.name, channel.name, time_sent, flags))
+            logging.info(f"Run AI database command {insert_into_table} with values {message},"
+                         f" {author.name},"
+                         f" {channel.name},"
+                         f" {time_sent},"
+                         f" {flags}")
             db.commit()
             db.close()
-            logging.info("Logged AI report do DataBase")
+            logging.info("Logged AI report to database")
         except mariadb.Error as e:
             logging.error(e)
 
@@ -119,6 +122,7 @@ def setup_bot():
         )
         embed = discord.Embed(description=message, color=discord.Color.green(), title="**AutoMod Online**")
         await tybalt_logs.send(embed=embed)
+
 
 
     @bot.event
