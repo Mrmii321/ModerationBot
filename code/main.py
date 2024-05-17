@@ -226,9 +226,10 @@ def setup_bot():
         await ctx.send(embed=embed)
 
 
-    @bot.command(name="checkflags")
+    # This is temporarily disabled whilst working on fix (it does it for targets)
+    """@bot.command(name="checkflags")
     async def check_flags(ctx, target):
-        """Checks the flags of a user"""
+        Checks the flags of a user
         if target is None:
             flag_list = []
             author = ctx.author
@@ -243,7 +244,20 @@ def setup_bot():
 
             for flag in flags:
                 flag_list.append(flag)
-            await ctx.send(flag_list)
+            await ctx.send(flag_list)"""
+
+
+    @bot.command(name="checkflags")
+    async def check_flags(ctx, ):
+        """Checks the flags of a user"""
+        flag_list = []
+        author = ctx.author
+        flags = author.public_flags
+
+        for flag in flags:
+            flag_list.append(flag)
+        await ctx.send(flag_list)
+
 
 
     @bot.command(name="spamcheck")
