@@ -227,7 +227,7 @@ def setup_bot():
 
 
     @bot.command(name="checkflags")
-    async def check_self_flags(ctx, target):
+    async def check_flags(ctx, target):
         """Checks the flags of a user"""
         if target is None:
             flag_list = []
