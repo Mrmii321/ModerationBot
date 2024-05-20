@@ -72,9 +72,7 @@ def setup_bot():
         )
         embed = discord.Embed(description=message, color=discord.Color.green(), title="**AutoMod Online**")
         await tybalt_logs.send(embed=embed)
-        check_for_spammers.start()
-        logging.info("Started spammer check")
-
+        check_for_spammers.start(manual=False)
 
 
     @bot.event
@@ -131,7 +129,6 @@ def setup_bot():
                     await message.delete()
 
         else:
-            logging.info(f"Message sent by {message.author} was ignored through senior staff status")
             await bot.process_commands(message)
 
 
@@ -186,15 +183,12 @@ def setup_bot():
 
 
     """Commands are from here below"""
-
-
-    def get_staff_ids():
-        for role_key, role_value in staff_roles.items():
-            return role_value
+    def get_staff_role_ids():
+        return list(staff_roles.values())
 
 
     @bot.command(name="uptime")
-    @commands.has_any_role(get_staff_ids())
+    @commands.has_any_role(*get_staff_role_ids())
     async def uptime(ctx):
         """Checks the uptime of the bot"""
         message = (
@@ -206,7 +200,7 @@ def setup_bot():
 
 
     @bot.command(name="checkflags")
-    @commands.has_any_role(get_staff_ids())
+    @commands.has_any_role(*get_staff_role_ids())
     async def check_flags(ctx):
         """Checks the flags of a user"""
         if ctx.message.mentions:
@@ -238,10 +232,10 @@ def setup_bot():
 
 
     @bot.command(name="spamcheck")
-    @commands.has_any_role(get_staff_ids())
+    @commands.has_any_role(*get_staff_role_ids())
     async def check_for_spam_warnings(ctx):
         """Check the server for any potential spammers"""
-        await check_for_spammers()
+        await check_for_spammers(manual=False)
 
 
     return bot
