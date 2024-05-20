@@ -98,11 +98,11 @@ def setup_bot():
                                                 f"Timespamp: {message.created_at}.")
                 await message.add_reaction("⚠️")
                 key = list(flagged_categories.keys())[0]
-                database.log_ai(message=message.content,
-                                author=message.author,
-                                channel=message.channel,
-                                time_sent=message.created_at,
-                                flags=key.strip("''"))
+                await database.log_ai(message=message.content,
+                                      author=message.author,
+                                      channel=message.channel,
+                                      time_sent=message.created_at,
+                                      flags=key.strip("''"))
 
             """Part for bad words list"""
 
@@ -120,11 +120,11 @@ def setup_bot():
                                                f"Timespamp: {message.created_at}."
                                        )
                     await message.channel.send(f"Please do not say vulgar things {message.author.mention}")
-                    database.log_filter(message=message.content,
-                                        author=message.author,
-                                        channel=message.channel,
-                                        time_sent=message.created_at,
-                                        harmful_word=word)
+                    await database.log_filter(message=message.content,
+                                              author=message.author,
+                                              channel=message.channel,
+                                              time_sent=message.created_at,
+                                              harmful_word=word)
                     await message.delete()
 
         else:
@@ -178,7 +178,6 @@ def setup_bot():
                 for role_key, role_value in staff_roles.items():
                     if role.id == role_value or role_value == role.id:
                         spreadsheeter.remove_role(role=role_key, user=user)
-
 
 
     """Commands are from here below"""
