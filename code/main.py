@@ -12,6 +12,7 @@ from sensitiveVariables import sensitiveVariables
 sensitivevariables = sensitiveVariables.SensitiveVariables()
 spreadsheeter = spreadsheeter.Spreadsheeter()
 database = database.MariaDB()
+staff_roles = sensitivevariables.staff_roles
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[
@@ -160,7 +161,6 @@ def setup_bot():
 
     @bot.event
     async def on_member_update(before, after):
-        staff_roles = sensitivevariables.staff_roles
         if before.roles != after.roles:
             old_roles = set(before.roles)
             new_roles = set(after.roles)
@@ -185,19 +185,15 @@ def setup_bot():
     """Commands are from here below"""
 
 
-    @bot.command(name="uptime")
-    @commands.has_any_role(272156013493485568,
-                           687271112144322604,
-                           1214710025352781894,
-                           272157047498473474,
-                           1174432041627041792,
-                           1216163713480921170,
-                           1215712136194555984,
-                           1241818185489977404,
-                           1215387561841791058,
-                           272157265111416833)
-    async def uptime(ctx):
+    def get_staff_ids():
+        for role_key, role_value in staff_roles.items():
+            return role_value
 
+
+    @bot.command(name="uptime")
+    @commands.has_any_role(get_staff_ids())
+    async def uptime(ctx):
+        """Checks the uptime of the bot"""
         message = (
             f"AutoMod has been online for <t:{start_time}:R>"
         )
@@ -207,16 +203,7 @@ def setup_bot():
 
 
     @bot.command(name="checkflags")
-    @commands.has_any_role(272156013493485568,
-                           687271112144322604,
-                           1214710025352781894,
-                           272157047498473474,
-                           1174432041627041792,
-                           1216163713480921170,
-                           1215712136194555984,
-                           1241818185489977404,
-                           1215387561841791058,
-                           272157265111416833)
+    @commands.has_any_role(get_staff_ids())
     async def check_flags(ctx):
         """Checks the flags of a user"""
         if ctx.message.mentions:
@@ -248,16 +235,7 @@ def setup_bot():
 
 
     @bot.command(name="spamcheck")
-    @commands.has_any_role(272156013493485568,
-                           687271112144322604,
-                           1214710025352781894,
-                           272157047498473474,
-                           1174432041627041792,
-                           1216163713480921170,
-                           1215712136194555984,
-                           1241818185489977404,
-                           1215387561841791058,
-                           272157265111416833)
+    @commands.has_any_role(get_staff_ids())
     async def check_for_spam_warnings(ctx):
         """Check the server for any potential spammers"""
         await check_for_spammers()
