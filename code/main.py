@@ -1,13 +1,23 @@
 import json
 import logging
 import time
-
 import discord
 from discord.ext import commands, tasks
-import mariadb
 from openai import OpenAI
+from spreadsheeter import spreadsheeter
+from database import database
+from sensitiveVariables import sensitiveVariables
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+sensitivevariables = sensitiveVariables.SensitiveVariables()
+spreadsheeter = spreadsheeter.Spreadsheeter()
+database = database.MariaDB()
+
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[
+    logging.StreamHandler()
+])
+logger = logging.getLogger(__name__)
 # Setting the logger
 
 
@@ -38,87 +48,15 @@ class Main:
         logging.info(f"Created Embed for harmful message {message}")
 
 
-class MariaDB:
-    def __init__(self):
-        self.host = "localhost"
-        self.user = "tybalt"
-        self.password = "OWuq)xg4j7mdU2hr"
-        self.database = "tybalt-logs"
-
-    def log_filter(self, message, author, channel, time_sent, harmful_word):
-        try:
-            db = mariadb.connect(
-                host=self.host,
-                user=self.user,
-                passwd=self.password,
-                database=self.database
-            )
-
-            cursor = db.cursor()
-
-            insert_into_table = ("INSERT INTO messages (message, author, channel, time_sent, word) "
-                                 "VALUES (?, ?, ?, ?, ?)")
-            cursor.execute(insert_into_table, (message, author.name, channel.name, time_sent, harmful_word))
-            logging.info(f"Run database command {insert_into_table} with values {message},"
-                         f" {author.name},"
-                         f" {channel.name},"
-                         f" {time_sent},"
-                         f" {harmful_word}")
-            db.commit()
-            db.close()
-            logging.info(f"Logged harmful word to database")
-        except mariadb.Error as e:
-            logging.error(e)
-
-    def log_ai(self, message, author, channel, time_sent, flags):
-        try:
-            db = mariadb.connect(
-                host=self.host,
-                user=self.user,
-                passwd=self.password,
-                database=self.database
-            )
-
-            cursor = db.cursor()
-
-            insert_into_table = ("INSERT INTO ai_messages (message, author, channel, time_sent, flags) "
-                                 "VALUES (?, ?, ?, ?, ?)")
-            cursor.execute(insert_into_table, (message, author.name, channel.name, time_sent, flags))
-            logging.info(f"Run AI database command {insert_into_table} with values {message},"
-                         f" {author.name},"
-                         f" {channel.name},"
-                         f" {time_sent},"
-                         f" {flags}")
-            db.commit()
-            db.close()
-            logging.info("Logged AI report to database")
-        except mariadb.Error as e:
-            logging.error(e)
-
-
-maria_db = MariaDB()
-
-
 def setup_bot():
     intents = discord.Intents.all()
     bot = commands.Bot(command_prefix='==', intents=intents)
-    ai_key = "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"
     bypass_roles = ["Owner", "Admin", "General Manager", "Community manager", "Staff manager",
                     "Events Manager", "Consultant", "Senior Moderator"]
-    bypass_roles_id = [272156013493485568,
-                       687271112144322604,
-                       1214710025352781894,
-                       272157047498473474,
-                       1174432041627041792,
-                       1216163713480921170,
-                       1215712136194555984,
-                       1241818185489977404,
-                       1215387561841791058,
-                       272157265111416833]
     debug_role = ["bot debug perms"]
     start_time = int(time.time())
 
-    main = Main(ai_key, bot)
+    main = Main(sensitivevariables.OPENAI_key, bot)
 
 
 
@@ -141,10 +79,12 @@ def setup_bot():
     @bot.event
     async def on_message(message):
         """Handles incoming messages."""
+        if message.author.bot:
+            return
         user_roles = [role.name for role in message.author.roles]
 
         if not any(role in user_roles for role in bypass_roles) or any(role in user_roles for role in debug_role):
-            if message.author == bot.user or message.author == discord.Member.bot:
+            if message.author == bot.user:
                 return
 
             """Part for AI mod"""
@@ -160,7 +100,7 @@ def setup_bot():
                 logging.info(f"User {message.author} has been privately messaged about their vulgar message")
                 await message.add_reaction("⚠️")
                 key = list(flagged_categories.keys())[0]
-                maria_db.log_ai(message=message.content,
+                database.log_ai(message=message.content,
                                 author=message.author,
                                 channel=message.channel,
                                 time_sent=message.created_at,
@@ -182,15 +122,12 @@ def setup_bot():
                                                f"Timespamp: {message.created_at}."
                                        )
                     await message.channel.send(f"Please do not say vulgar things {message.author.mention}")
-                    maria_db.log_filter(message=message.content,
+                    database.log_filter(message=message.content,
                                         author=message.author,
                                         channel=message.channel,
                                         time_sent=message.created_at,
                                         harmful_word=word)
                     await message.delete()
-
-                else:
-                    logging.info(f"Message was innocent")
 
         else:
             logging.info(f"Message sent by {message.author} was ignored through senior staff status")
@@ -219,6 +156,30 @@ def setup_bot():
         channel = bot.get_channel(channel_id)
         embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful word in message")
         await channel.send(embed=embed)
+
+
+    @bot.event
+    async def on_member_update(before, after):
+        staff_roles = sensitivevariables.staff_roles
+        if before.roles != after.roles:
+            old_roles = set(before.roles)
+            new_roles = set(after.roles)
+
+            added_roles = new_roles - old_roles
+            removed_roles = old_roles - new_roles
+
+            user = after.name
+
+            for role in added_roles:
+                for role_key, role_value in staff_roles.items():
+                    if role.id == role_value or role_value == role.id:
+                        spreadsheeter.add_role(role=role_key, user=user)
+
+            for role in removed_roles:
+                for role_key, role_value in staff_roles.items():
+                    if role.id == role_value or role_value == role.id:
+                        spreadsheeter.remove_role(role=role_key, user=user)
+
 
 
     """Commands are from here below"""
@@ -307,4 +268,4 @@ def setup_bot():
 
 if __name__ == "__main__":
     bot = setup_bot()
-    bot.run("OTc0NDc1MTYxOTI1NDU5OTk4.G6M3rx.sp4a_xyFDoJHws5hpGJ3w28pab9A-ETfNxOaRk")
+    bot.run(sensitivevariables.bot_token)
