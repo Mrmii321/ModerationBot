@@ -96,7 +96,6 @@ def setup_bot():
                                                 f"Sent by: {message.author}.\n"
                                                 f"Channel: {message.channel}.\n"
                                                 f"Timespamp: {message.created_at}.")
-                logging.info(f"User {message.author} has been privately messaged about their vulgar message")
                 await message.add_reaction("⚠️")
                 key = list(flagged_categories.keys())[0]
                 database.log_ai(message=message.content,
@@ -192,7 +191,7 @@ def setup_bot():
     async def uptime(ctx):
         """Checks the uptime of the bot"""
         message = (
-            f"AutoMod has been online for <t:{start_time}:R>"
+            f"AutoMod went online <t:{start_time}:R>"
         )
 
         embed = discord.Embed(description=message, color=discord.Color.green(), title="Uptime")
