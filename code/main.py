@@ -4,13 +4,11 @@ import time
 import discord
 from discord.ext import commands, tasks
 from openai import OpenAI
-from spreadsheeter import spreadsheeter
 from database import database
 from sensitiveVariables import sensitiveVariables
 
 
 sensitivevariables = sensitiveVariables.SensitiveVariables()
-spreadsheeter = spreadsheeter.Spreadsheeter()
 database = database.MariaDB()
 staff_roles = sensitivevariables.staff_roles
 
@@ -156,28 +154,6 @@ def setup_bot():
         channel = bot.get_channel(channel_id)
         embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful word in message")
         await channel.send(embed=embed)
-
-
-    @bot.event
-    async def on_member_update(before, after):
-        if before.roles != after.roles:
-            old_roles = set(before.roles)
-            new_roles = set(after.roles)
-
-            added_roles = new_roles - old_roles
-            removed_roles = old_roles - new_roles
-
-            user = after.name
-
-            for role in added_roles:
-                for role_key, role_value in staff_roles.items():
-                    if role.id == role_value or role_value == role.id:
-                        spreadsheeter.add_role(role=role_key, user=user)
-
-            for role in removed_roles:
-                for role_key, role_value in staff_roles.items():
-                    if role.id == role_value or role_value == role.id:
-                        spreadsheeter.remove_role(role=role_key, user=user)
 
 
     """Commands are from here below"""
