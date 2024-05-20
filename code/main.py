@@ -105,10 +105,21 @@ def setup_bot():
     ai_key = "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"
     bypass_roles = ["Owner", "Admin", "General Manager", "Community manager", "Staff manager",
                     "Events Manager", "Consultant", "Senior Moderator"]
+    bypass_roles_id = [272156013493485568,
+                       687271112144322604,
+                       1214710025352781894,
+                       272157047498473474,
+                       1174432041627041792,
+                       1216163713480921170,
+                       1215712136194555984,
+                       1241818185489977404,
+                       1215387561841791058,
+                       272157265111416833]
     debug_role = ["bot debug perms"]
     start_time = int(time.time())
 
     main = Main(ai_key, bot)
+
 
 
     @bot.event
@@ -134,6 +145,8 @@ def setup_bot():
             if message.author == bot.user or message.author == discord.Member.bot:
                 return
 
+            """Part for AI mod"""
+
             flagged_categories = await main.get_flagged_categories(text=message.content)
             if flagged_categories:
                 await main.send_message(channel_id=1226672487966834778,
@@ -151,8 +164,7 @@ def setup_bot():
                                 time_sent=message.created_at,
                                 flags=key.strip("''"))
 
-            await bot.process_commands(message)
-
+            """Part for bad words list"""
 
             with open("nono_words.json", "r") as file:
                 data = json.loads(file.read())
@@ -175,11 +187,12 @@ def setup_bot():
                                         harmful_word=word)
                     await message.delete()
 
-            else:
-                logging.info(f"Message was innocent")
+                else:
+                    logging.info(f"Message was innocent")
 
         else:
             logging.info(f"Message sent by {message.author} was ignored through senior staff status")
+            await bot.process_commands(message)
 
 
     @tasks.loop(hours=1)
@@ -209,13 +222,17 @@ def setup_bot():
     """Commands are from here below"""
 
 
-    @bot.command()
-    async def shutdown(ctx):
-        await ctx.send("Shutting down AI systems")
-        quit()
-
-
     @bot.command(name="uptime")
+    @commands.has_any_role(272156013493485568,
+                           687271112144322604,
+                           1214710025352781894,
+                           272157047498473474,
+                           1174432041627041792,
+                           1216163713480921170,
+                           1215712136194555984,
+                           1241818185489977404,
+                           1215387561841791058,
+                           272157265111416833)
     async def uptime(ctx):
 
         message = (
@@ -226,11 +243,29 @@ def setup_bot():
         await ctx.send(embed=embed)
 
 
-    # This is temporarily disabled whilst working on fix (it does it for targets)
-    """@bot.command(name="checkflags")
-    async def check_flags(ctx, target):
-        Checks the flags of a user
-        if target is None:
+    @bot.command(name="checkflags")
+    @commands.has_any_role(272156013493485568,
+                           687271112144322604,
+                           1214710025352781894,
+                           272157047498473474,
+                           1174432041627041792,
+                           1216163713480921170,
+                           1215712136194555984,
+                           1241818185489977404,
+                           1215387561841791058,
+                           272157265111416833)
+    async def check_flags(ctx):
+        """Checks the flags of a user"""
+        if ctx.message.mentions:
+            target = ctx.message.mentions[0]
+            flag_list = []
+            flags = target.public_flags
+
+            for flag in flags:
+                flag_list.append(flag)
+            await ctx.send(flag_list)
+            logging.info(f"Presented tags of {target.name}")
+        else:
             flag_list = []
             author = ctx.author
             flags = author.public_flags
@@ -238,29 +273,20 @@ def setup_bot():
             for flag in flags:
                 flag_list.append(flag)
             await ctx.send(flag_list)
-        elif target is not None:
-            flag_list = []
-            flags = target.public_flags
-
-            for flag in flags:
-                flag_list.append(flag)
-            await ctx.send(flag_list)"""
-
-
-    @bot.command(name="checkflags")
-    async def check_flags(ctx, ):
-        """Checks the flags of a user"""
-        flag_list = []
-        author = ctx.author
-        flags = author.public_flags
-
-        for flag in flags:
-            flag_list.append(flag)
-        await ctx.send(flag_list)
-
+            logging.info(f"Presented tags of {author.name}")
 
 
     @bot.command(name="spamcheck")
+    @commands.has_any_role(272156013493485568,
+                           687271112144322604,
+                           1214710025352781894,
+                           272157047498473474,
+                           1174432041627041792,
+                           1216163713480921170,
+                           1215712136194555984,
+                           1241818185489977404,
+                           1215387561841791058,
+                           272157265111416833)
     async def check_for_spam_warnings(ctx):
         """Check the server for any potential spammers"""
         await check_for_spammers()
