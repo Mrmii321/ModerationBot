@@ -136,8 +136,11 @@ def setup_bot():
 
 
     @tasks.loop(hours=1)
-    async def check_for_spammers():
-        logging.info("Started spammer check")
+    async def check_for_spammers(manual):
+        if manual:
+            logging.info("Started spammer check manually")
+        else:
+            logging.info("Started spammer check automatically")
         guild_id = bot.get_guild(272148882048155649)
         channel = bot.get_channel(1239179624689434716)
         members = guild_id.members
