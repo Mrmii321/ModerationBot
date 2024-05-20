@@ -152,4 +152,4 @@ cython_debug/
 #.idea/
 
 
-code/nono_words.json
+/code/nono_words.json
