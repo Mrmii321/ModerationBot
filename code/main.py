@@ -133,6 +133,8 @@ def setup_bot():
         )
         embed = discord.Embed(description=message, color=discord.Color.green(), title="**AutoMod Online**")
         await tybalt_logs.send(embed=embed)
+        check_for_spammers.start()
+        logging.info("Started spammer check")
 
 
 
@@ -197,6 +199,7 @@ def setup_bot():
 
     @tasks.loop(hours=1)
     async def check_for_spammers():
+        logging.info("Started spammer check")
         guild_id = bot.get_guild(272148882048155649)
         channel = bot.get_channel(1239179624689434716)
         members = guild_id.members
@@ -209,8 +212,7 @@ def setup_bot():
                 embed = discord.Embed(description=message, color=discord.Color.red(), title="**Suspicious Account**")
 
                 await channel.send(embed=embed)
-                logging.info(f"User {member.name} has been flagged as potential spammer. Sending message to channel.")
-                logging.info(f"Member {member} has been flagged as suspicious")
+                logging.info(f"User {member.name} has been flagged as potential spammer.")
 
 
     async def send_message(channel_id, message):
@@ -263,7 +265,11 @@ def setup_bot():
 
             for flag in flags:
                 flag_list.append(flag)
-            await ctx.send(flag_list)
+            message = (
+                flag_list
+            )
+            embed = discord.Embed(description=message, color=discord.Color.green(), title=f"Flags of {target.name}")
+            await ctx.channel.send(embed=embed)
             logging.info(f"Presented tags of {target.name}")
         else:
             flag_list = []
@@ -272,7 +278,11 @@ def setup_bot():
 
             for flag in flags:
                 flag_list.append(flag)
-            await ctx.send(flag_list)
+            message = (
+                flag_list
+            )
+            embed = discord.Embed(description=message, color=discord.Color.green(), title=f"Flags of {author.name}")
+            await ctx.channel.send(embed=embed)
             logging.info(f"Presented tags of {author.name}")
 
 
@@ -293,7 +303,6 @@ def setup_bot():
 
 
     return bot
-
 
 
 if __name__ == "__main__":
