@@ -88,7 +88,7 @@ def setup_bot():
 
             flagged_categories = await main.get_flagged_categories(text=message.content)
             if flagged_categories:
-                await main.send_message(channel_id=1226672487966834778,
+                await main.send_message(channel_id=1250475863976312944,
                                         message=f"Harmful message: {message.content}.\n"
                                                 f"Category: {flagged_categories}.\n "
                                                 f"Sent by: {message.author}.\n"
@@ -110,7 +110,7 @@ def setup_bot():
             for word in data:
                 if word in words:
                     logging.info(f"Bad word ({word}) detected")
-                    await send_message(channel_id=999718985098600539,
+                    await send_message(channel_id=1250475863976312944,
                                        message=f"Harmful word: {word}.\n"
                                                f"Message: {message.content}.\n "
                                                f"Sent by: {message.author}.\n"
@@ -129,7 +129,7 @@ def setup_bot():
             await bot.process_commands(message)
 
 
-    @tasks.loop(hours=1)
+    @tasks.loop(hours=3)
     async def check_for_spammers(manual):
         if manual:
             logging.info("Started spammer check manually")
@@ -142,7 +142,7 @@ def setup_bot():
 
             if member.public_flags.spammer:
                 message = (
-                    f"User {member.mention} has been flagged as suspicious."
+                    f"User {member.mention} ({member.name}) has been flagged as suspicious."
                 )
                 embed = discord.Embed(description=message, color=discord.Color.red(), title="**Suspicious Account**")
 
@@ -210,6 +210,12 @@ def setup_bot():
     async def check_for_spam_warnings(ctx):
         """Check the server for any potential spammers"""
         await check_for_spammers(manual=False)
+
+
+    @bot.command(name="scan")
+    @commands.has_any_role(*get_staff_role_ids())
+    async def database_query_user(ctx):
+        await database.retrieve_user_data(ctx=ctx)
 
 
     return bot

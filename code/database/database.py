@@ -49,3 +49,24 @@ class MariaDB:
 
         except sqlite3.Error as e:
             logger.error(e)
+
+
+    async def retrieve_user_data(self, ctx):
+        author = ctx.author
+        db = sqlite3.connect(self.db_path)
+        cursor = db.cursor()
+
+        query = "SELECT * FROM messages WHERE author = ?;"
+
+        cursor.execute(query, (author.name,))
+        logging.info(f"Scanned {str (author.name)}")
+
+        rows = cursor.fetchall()
+
+        row_list = []
+
+        for row in rows:
+            row_list.append(row)
+        await ctx.send(row_list)
+
+        db.close()
