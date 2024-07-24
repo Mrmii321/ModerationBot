@@ -28,6 +28,7 @@ class Main:
         self.bot = bot_class_var
 
     async def get_flagged_categories(self, text):
+        """The actuall AI part"""
         response = self.client.moderations.create(input=text)
         response_dict = response.model_dump()
         results = response_dict['results'][0]
