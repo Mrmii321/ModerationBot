@@ -134,6 +134,12 @@ def setup_bot():
     async def check_for_spammers(manual):
         if manual:
             logging.info("Started spammer check manually")
+            channel = bot.get_channel(1239179624689434716)
+            message = (
+                "Started spammer check manually"
+            )
+            embed = discord.Embed(description=message, color=discord.Color.green(), title="**Spammer Check**")
+            await channel.send(embed=embed)
         else:
             logging.info("Started spammer check automatically")
         guild_id = bot.get_guild(272148882048155649)
