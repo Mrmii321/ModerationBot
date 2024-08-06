@@ -134,16 +134,16 @@ def setup_bot():
     async def check_for_spammers(manual):
         if manual:
             logging.info("Started spammer check manually")
-            channel = bot.get_channel(1239179624689434716)
             message = (
                 "Started spammer check manually"
             )
+            channel = bot.get_channel(1250475863976312944)
             embed = discord.Embed(description=message, color=discord.Color.green(), title="**Spammer Check**")
             await channel.send(embed=embed)
-        else:
+        elif not manual:
             logging.info("Started spammer check automatically")
         guild_id = bot.get_guild(272148882048155649)
-        channel = bot.get_channel(1239179624689434716)
+        channel = bot.get_channel(1250475863976312944)
         members = guild_id.members
         for member in members:
 
@@ -155,6 +155,13 @@ def setup_bot():
 
                 await channel.send(embed=embed)
                 logging.info(f"User {member.name} has been flagged as potential spammer.")
+            if len(members) == 0 and manual:
+                message = (
+                    f"No suspicious accounts found."
+                )
+                embed = discord.Embed(description=message, color=discord.Color.green(), title="**No Suspicious Accounts**")
+                await channel.send(embed=embed)
+                logging.info(f"No suspicious accounts found.")
 
 
     async def send_message(channel_id, message):
@@ -216,7 +223,7 @@ def setup_bot():
     @commands.has_any_role(*get_staff_role_ids())
     async def check_for_spam_warnings(ctx):
         """Check the server for any potential spammers"""
-        await check_for_spammers(manual=False)
+        await check_for_spammers(manual=True)
 
 
     @bot.command(name="scan")
