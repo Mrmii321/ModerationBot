@@ -3,14 +3,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class MariaDB:
     def __init__(self):
-        self.db_path = r"/home/minecraft/AutoModBot/messages (1).db"
+        self.db_config = "logs.db"
 
     async def log_filter(self, message, author, channel, time_sent, harmful_word):
         try:
-            db = sqlite3.connect(self.db_path)
+            db = sqlite3.connect(self.db_config)
             cursor = db.cursor()
 
             # Ensure all inputs are strings
@@ -20,7 +19,7 @@ class MariaDB:
             time_sent = str(time_sent)
             harmful_word = str(harmful_word)
 
-            insert_query = "INSERT INTO messages (message, author, channel, time_sent, word) VALUES (?, ?, ?, ?, ?)"
+            insert_query = "INSERT INTO messages (message, author, channel, time_sent, word) VALUES (%s, %s, %s, %s, %s)"
             cursor.execute(insert_query, (message, author, channel, time_sent, harmful_word))
 
             db.commit()
@@ -31,7 +30,7 @@ class MariaDB:
 
     async def log_ai(self, message, author, channel, time_sent, flags):
         try:
-            db = sqlite3.connect(self.db_path)
+            db = sqlite3.connect(**self.db_config)
             cursor = db.cursor()
 
             # Ensure all inputs are strings
@@ -41,7 +40,7 @@ class MariaDB:
             time_sent = str(time_sent)
             flags = str(flags)
 
-            insert_query = "INSERT INTO ai_messages (message, author, channel, time_sent, flags) VALUES (?, ?, ?, ?, ?)"
+            insert_query = "INSERT INTO ai_messages (message, author, channel, time_sent, flags) VALUES (%s, %s, %s, %s, %s)"
             cursor.execute(insert_query, (message, author, channel, time_sent, flags))
 
             db.commit()
@@ -50,13 +49,12 @@ class MariaDB:
         except sqlite3.Error as e:
             logger.error(e)
 
-
     async def retrieve_user_data(self, ctx):
         author = ctx.author
-        db = sqlite3.connect(self.db_path)
+        db = sqlite3.connect(**self.db_config)
         cursor = db.cursor()
 
-        query = "SELECT * FROM messages WHERE author = ?;"
+        query = "SELECT * FROM messages WHERE author = %s;"
 
         cursor.execute(query, (author.name,))
         logging.info(f"Scanned {str (author.name)}")
