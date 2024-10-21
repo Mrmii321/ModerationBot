@@ -34,7 +34,7 @@ class Main:
             input=text
             )
         response_dict = response.model_dump()
-        results = response_dict['results'][0]['categories']
+        results = response_dict['results'][0]
         flagged_categories = {category: flagged for category, flagged in results['categories'].items() if flagged}
         logging.info(f"Checked text {text}")
         return flagged_categories
@@ -100,11 +100,13 @@ def setup_bot():
                                                 f"Timespamp: {message.created_at}.")
                 await message.add_reaction("⚠️")
                 key = list(flagged_categories.keys())[0]
+                """
+                Database code Nulled
                 await database.log_ai(message=message.content,
                                       author=message.author,
                                       channel=message.channel,
                                       time_sent=message.created_at,
-                                      flags=key.strip("''"))
+                                      flags=key.strip("''"))"""
 
             """Part for bad words list"""
 
@@ -122,11 +124,15 @@ def setup_bot():
                                                f"Timespamp: {message.created_at}."
                                        )
                     await message.channel.send(f"Please do not say vulgar things {message.author.mention}")
+
+                    """
+                    Database code Nulled
                     await database.log_filter(message=message.content,
                                               author=message.author,
                                               channel=message.channel,
                                               time_sent=message.created_at,
-                                              harmful_word=word)
+                                              harmful_word=word)"""
+
                     await message.delete()
 
         else:
