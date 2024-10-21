@@ -29,9 +29,12 @@ class Main:
 
     async def get_flagged_categories(self, text):
         """The actuall AI part"""
-        response = self.client.moderations.create(input=text)
+        response = self.client.moderations.create(
+            model="omni-moderation-latest",
+            input=text
+            )
         response_dict = response.model_dump()
-        results = response_dict['results'][0]
+        results = response_dict['results'][0]['categories']
         flagged_categories = {category: flagged for category, flagged in results['categories'].items() if flagged}
         logging.info(f"Checked text {text}")
         return flagged_categories
