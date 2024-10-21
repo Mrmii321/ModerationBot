@@ -105,7 +105,7 @@ def setup_bot():
 
             """Part for bad words list"""
 
-            with open(r"srv/nono_words.json", "r") as file:
+            with open("nono_words.json", "r") as file:
                 data = json.loads(file.read())
             words = message.content.split()
             for word in data:
