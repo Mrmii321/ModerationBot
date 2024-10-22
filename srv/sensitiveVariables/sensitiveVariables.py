@@ -2,12 +2,12 @@ import os
 from dotenv import load_dotenv
 
 
-load_dotenv()
+load_dotenv("srv\.env")
 
 
 class SensitiveVariables:
     def __init__(self):
-        self.OPENAI_key = os.getenv("OPENAI_API_KEY")
+        self.OPENAI_key = load_dotenv("OPENAI_API_KEY")
         self.bot_token = os.getenv("BOT_TOKEN")
         self.staff_roles = {
             "owner": 272156013493485568,

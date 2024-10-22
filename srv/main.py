@@ -100,15 +100,15 @@ def setup_bot():
                                                 f"Timespamp: {message.created_at}.")
                 await message.add_reaction("⚠️")
                 key = list(flagged_categories.keys())[0]
-                """
-                Database code Nulled
+                
+
                 await database.log_ai(message=message.content,
                                       author=message.author,
                                       channel=message.channel,
                                       time_sent=message.created_at,
-                                      flags=key.strip("''"))"""
+                                      flags=key.strip("''"))
 
-            """Part for bad words list"""
+            """Part for bad words list"""  # TODO Fix database code
 
             with open("nono_words.json", "r") as file:
                 data = json.loads(file.read())
@@ -125,13 +125,12 @@ def setup_bot():
                                        )
                     await message.channel.send(f"Please do not say vulgar things {message.author.mention}")
 
-                    """
-                    Database code Nulled
+                    
                     await database.log_filter(message=message.content,
                                               author=message.author,
                                               channel=message.channel,
                                               time_sent=message.created_at,
-                                              harmful_word=word)"""
+                                              harmful_word=word)  # TODO Fix database code
 
                     await message.delete()
 

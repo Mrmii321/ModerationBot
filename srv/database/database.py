@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 class MariaDB:
     def __init__(self):
-        self.db_path = r"/home/minecraft/AutoModBot/messages (1).db"
+        self.db_path = r"logs.db"  # TODO update logs.db on filezilla
 
     async def log_filter(self, message, author, channel, time_sent, harmful_word):
         try:
