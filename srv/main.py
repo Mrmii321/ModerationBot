@@ -101,16 +101,15 @@ def setup_bot():
                 await message.add_reaction("⚠️")
                 key = list(flagged_categories.keys())[0]
                 
-
                 await database.log_ai(message=message.content,
                                       author=message.author,
                                       channel=message.channel,
                                       time_sent=message.created_at,
                                       flags=key.strip("''"))
 
-            """Part for bad words list"""  # TODO Fix database code
+            """Part for bad words list"""
 
-            with open("nono_words.json", "r") as file:
+            with open("srv/nono_words.json", "r") as file:
                 data = json.loads(file.read())
             words = message.content.split()
             for word in data:
@@ -124,18 +123,12 @@ def setup_bot():
                                                f"Timespamp: {message.created_at}."
                                        )
                     await message.channel.send(f"Please do not say vulgar things {message.author.mention}")
-
-                    
                     await database.log_filter(message=message.content,
                                               author=message.author,
                                               channel=message.channel,
                                               time_sent=message.created_at,
-                                              harmful_word=word)  # TODO Fix database code
-
+                                              harmful_word=word)
                     await message.delete()
-
-        else:
-            await bot.process_commands(message)
 
 
     @tasks.loop(hours=3)
@@ -148,7 +141,7 @@ def setup_bot():
             channel = bot.get_channel(1250475863976312944)
             embed = discord.Embed(description=message, color=discord.Color.green(), title="**Spammer Check**")
             await channel.send(embed=embed)
-        elif not manual:
+        else:
             logging.info("Started spammer check automatically")
         guild_id = bot.get_guild(272148882048155649)
         channel = bot.get_channel(1250475863976312944)
