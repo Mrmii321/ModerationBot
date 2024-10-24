@@ -21,10 +21,12 @@ class MariaDB:
             harmful_word = str(harmful_word)
 
             insert_query = "INSERT INTO messages (message, author, channel, time_sent, word) VALUES (?, ?, ?, ?, ?)"
+            logging.info("Queried filter")
             cursor.execute(insert_query, (message, author, channel, time_sent, harmful_word))
 
             db.commit()
             db.close()
+            
 
         except sqlite3.Error as e:
             logger.error(e)
