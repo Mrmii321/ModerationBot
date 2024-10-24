@@ -55,7 +55,7 @@ def setup_bot():
     intents = discord.Intents.all()
     bot = commands.Bot(command_prefix='==', intents=intents)
     bypass_roles = ["Owner", "Admin", "General Manager", "Community manager", "Staff manager",
-                    "Events Manager", "Consultant", "Senior Moderator"]
+                    "Events Manager", "Consultant", "Senior Moderator", "Developer"]
     debug_role = ["bot debug perms"]
     start_time = int(time.time())
 
@@ -100,7 +100,7 @@ def setup_bot():
                                                 f"Timespamp: {message.created_at}.")
                 await message.add_reaction("⚠️")
                 key = list(flagged_categories.keys())[0]
-                
+
                 await database.log_ai(message=message.content,
                                       author=message.author,
                                       channel=message.channel,
@@ -129,6 +129,8 @@ def setup_bot():
                                               time_sent=message.created_at,
                                               harmful_word=word)
                     await message.delete()
+        else:
+            await bot.process_commands(message)
 
 
     @tasks.loop(hours=3)
