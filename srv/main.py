@@ -17,7 +17,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
     logging.StreamHandler()
 ])
 logger = logging.getLogger(__name__)
-# Setting the logger
 
 
 class Main:
@@ -28,7 +27,7 @@ class Main:
         self.bot = bot_class_var
 
     async def get_flagged_categories(self, text):
-        """The actuall AI part"""
+        """The actual AI part"""
         response = self.client.moderations.create(
             model="omni-moderation-latest",
             input=text
@@ -39,16 +38,25 @@ class Main:
         logging.info(f"Checked text {text}")
         return flagged_categories
 
-    async def send_message(self, channel_id, *, message):
+    async def create_embed(self, message, author=None, title="", color=discord.Color.default()):
+        embed = discord.Embed(description=message, color=color, title=title)
+        if author:
+            embed.set_footer(text=f"Sent by: {author}")
+        return embed
+
+    async def send_embed(self, channel_id, *, message, author=None, title="Harmful message", color=discord.Color.red()):
         channel = self.bot.get_channel(channel_id)
-        embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful message")
+        embed = await self.create_embed(message=message, author=author, title=title, color=color)
         await channel.send(embed=embed)  # Send the embed
         logging.info(f"Created Embed for harmful message {message}")
 
-    async def send_message_dm(self, *, message, author):
-        embed = discord.Embed(description=message, color=discord.Color.red(), title="Vulgar message")
-        await author.send(embed=embed)  # Send the embed
-        logging.info(f"Created Embed for harmful message {message}")
+    async def send_dm(self, *, message, author):
+        dm_channel = author.dm_channel
+        if dm_channel is None:
+            dm_channel = await author.create_dm()
+        await dm_channel.send(message)
+        logging.info(f"Sent DM to {author}: {message}")
+
 
 
 def setup_bot():
@@ -72,8 +80,7 @@ def setup_bot():
         message = (
             f"AutoMod started up at <t:{start_time}>"
         )
-        embed = discord.Embed(description=message, color=discord.Color.green(), title="**AutoMod Online**")
-        await tybalt_logs.send(embed=embed)
+        await main.send_embed(channel_id=tybalt_logs.id, message=message, title="**AutoMod Online**", color=discord.Color.green())
         check_for_spammers.start(manual=False)
 
 
@@ -92,13 +99,13 @@ def setup_bot():
 
             flagged_categories = await main.get_flagged_categories(text=message.content)
             if flagged_categories:
-                await main.send_message(channel_id=1250475863976312944,
+                await main.send_embed(channel_id=1250475863976312944,
                                         message=f"Harmful message: {message.content}.\n"
                                                 f"Category: {flagged_categories}.\n "
                                                 f"Sent by: {message.author}.\n"
                                                 f"Channel: {message.channel}.\n"
-                                                f"Timespamp: {message.created_at}.")
-                await message.add_reaction("⚠️")
+                                                f"Timespamp: {message.created_at}.",
+                                        author=message.author)
                 key = list(flagged_categories.keys())[0]
 
                 await database.log_ai(message=message.content,
@@ -115,19 +122,33 @@ def setup_bot():
             for word in data:
                 if word in words:
                     logging.info(f"Bad word ({word}) detected")
-                    await send_message(channel_id=1250475863976312944,
-                                       message=f"Harmful word: {word}.\n"
-                                               f"Message: {message.content}.\n "
-                                               f"Sent by: {message.author}.\n"
-                                               f"Channel: {message.channel}.\n"
-                                               f"Timespamp: {message.created_at}."
-                                       )
+                    await main.send_embed(channel_id=1250475863976312944,
+                                            message=f"Offending word: {word}.\n"
+                                                    f"Message: {message.content}.\n "
+                                                    f"Sent by: {message.author}.\n"
+                                                    f"Channel: {message.channel}.\n"
+                                                    f"Timespamp: {message.created_at}.",
+                                            author=message.author,
+                                            title="Harmful word in message",
+                                            color=discord.Color.red())
                     await message.channel.send(f"Please do not say vulgar things {message.author.mention}")
                     await database.log_filter(message=message.content,
                                               author=message.author,
                                               channel=message.channel,
                                               time_sent=message.created_at,
                                               harmful_word=word)
+                    await main.send_dm(
+                        message=(
+                            f"Hey {message.author}, your message goes against our community guidelines. "
+                            f"Please keep things respectful to maintain a positive environment!\n\n"
+                            f"Offending word: {word}.\n"
+                            f"Message: {message.content}.\n"
+                            f"Sent by: {message.author}.\n"
+                            f"Channel: {message.channel}.\n"
+                            f"Timestamp: {message.created_at}."
+                        ),
+                        author=message.author
+                    )
                     await message.delete()
         else:
             await bot.process_commands(message)
@@ -137,12 +158,7 @@ def setup_bot():
     async def check_for_spammers(manual):
         if manual:
             logging.info("Started spammer check manually")
-            message = (
-                "Started spammer check manually"
-            )
-            channel = bot.get_channel(1250475863976312944)
-            embed = discord.Embed(description=message, color=discord.Color.green(), title="**Spammer Check**")
-            await channel.send(embed=embed)
+            await main.send_embed(channel_id=1250475863976312944, message="Started spammer check manually", title="**Spammer Check**", color=discord.Color.green())
         else:
             logging.info("Started spammer check automatically")
         guild_id = bot.get_guild(272148882048155649)
@@ -151,26 +167,17 @@ def setup_bot():
         for member in members:
 
             if member.public_flags.spammer:
-                message = (
-                    f"User {member.mention} ({member.name}) has been flagged as suspicious."
-                )
-                embed = discord.Embed(description=message, color=discord.Color.red(), title="**Suspicious Account**")
-
-                await channel.send(embed=embed)
+                await main.send_embed(channel_id=channel.id,
+                                        message=f"User {member.mention} ({member.name}) has been flagged as suspicious.",
+                                        title="**Suspicious Account**", color=discord.Color.red())
                 logging.info(f"User {member.name} has been flagged as potential spammer.")
             if len(members) == 0 and manual:
-                message = (
-                    f"No suspicious accounts found."
-                )
-                embed = discord.Embed(description=message, color=discord.Color.green(), title="**No Suspicious Accounts**")
-                await channel.send(embed=embed)
+                await main.send_embed(channel_id=channel.id, message="No suspicious accounts found.", title="**No Suspicious Accounts**", color=discord.Color.green())
                 logging.info(f"No suspicious accounts found.")
 
 
-    async def send_message(channel_id, message):
-        channel = bot.get_channel(channel_id)
-        embed = discord.Embed(description=message, color=discord.Color.red(), title="Harmful word in message")
-        await channel.send(embed=embed)
+    async def send_embed(channel_id, message):
+        await main.send_embed(channel_id=channel_id, message=message, title="Harmful word in message", color=discord.Color.red())
 
 
     """Commands are from here below"""
@@ -186,8 +193,7 @@ def setup_bot():
             f"AutoMod went online <t:{start_time}:R>"
         )
 
-        embed = discord.Embed(description=message, color=discord.Color.green(), title="Uptime")
-        await ctx.send(embed=embed)
+        await main.send_embed(channel_id=ctx.channel.id, message=message, title="Uptime", color=discord.Color.green())
 
 
     @bot.command(name="checkflags")
@@ -204,8 +210,7 @@ def setup_bot():
             message = (
                 flag_list
             )
-            embed = discord.Embed(description=message, color=discord.Color.green(), title=f"Flags of {target.name}")
-            await ctx.channel.send(embed=embed)
+            await main.send_embed(channel_id=ctx.channel.id, message=message, title=f"Flags of {target.name}", color=discord.Color.green())
             logging.info(f"Presented tags of {target.name}")
         else:
             flag_list = []
@@ -217,8 +222,7 @@ def setup_bot():
             message = (
                 flag_list
             )
-            embed = discord.Embed(description=message, color=discord.Color.green(), title=f"Flags of {author.name}")
-            await ctx.channel.send(embed=embed)
+            await main.send_embed(channel_id=ctx.channel.id, message=message, title=f"Flags of {author.name}", color=discord.Color.green())
             logging.info(f"Presented tags of {author.name}")
 
 
