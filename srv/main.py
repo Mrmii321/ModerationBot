@@ -44,11 +44,31 @@ class Main:
             embed.set_footer(text=f"Sent by: {author}")
         return embed
 
+
     async def send_embed(self, channel_id, *, message, author=None, title="Harmful message", color=discord.Color.red()):
+        """
+        Send an embedded message to a specified channel.
+
+        This function creates and sends an embedded message to a Discord channel.
+
+        Args:
+            channel_id (int): The ID of the channel to send the embed to.
+            message (str): The main content of the embed.
+            author (discord.Member, optional): The author of the message. Defaults to None.
+            title (str, optional): The title of the embed. Defaults to "Harmful message".
+            color (discord.Color, optional): The color of the embed. Defaults to discord.Color.red().
+
+        Returns:
+            None
+
+        Note:
+            This function logs the creation of the embed for a harmful message.
+        """
         channel = self.bot.get_channel(channel_id)
         embed = await self.create_embed(message=message, author=author, title=title, color=color)
         await channel.send(embed=embed)  # Send the embed
         logging.info(f"Created Embed for harmful message {message}")
+
 
     async def send_dm(self, *, message, author):
         dm_channel = author.dm_channel
@@ -56,6 +76,32 @@ class Main:
             dm_channel = await author.create_dm()
         await dm_channel.send(message)
         logging.info(f"Sent DM to {author}: {message}")
+
+    
+    async def send_embed_dm(self, *, message, author, title="", color=discord.Color.default()):
+        """
+        Send an embedded direct message to a user.
+
+        This function creates and sends an embedded message to a user's DM channel.
+
+        Args:
+            message (str): The main content of the embed.
+            author (discord.Member): The user to whom the DM will be sent.
+            title (str, optional): The title of the embed. Defaults to an empty string.
+            color (discord.Color, optional): The color of the embed. Defaults to discord.Color.default().
+
+        Returns:
+            None
+
+        Note:
+            This function logs the sending of the embed DM.
+        """
+        dm_channel = author.dm_channel
+        if dm_channel is None:
+            dm_channel = await author.create_dm()
+        embed = await self.create_embed(message=message, author=author, title=title, color=color)
+        await dm_channel.send(embed=embed)
+        logging.info(f"Sent Embed DM to {author}: {message}")
 
 
 
@@ -137,18 +183,17 @@ def setup_bot():
                                               channel=message.channel,
                                               time_sent=message.created_at,
                                               harmful_word=word)
-                    await main.send_dm(
-                        message=(
-                            f"Hey {message.author}, your message goes against our community guidelines. "
+                    
+                    await main.send_embed_dm(author=message.author,
+                     message=f"Hey {message.author}, your message goes against our community guidelines. "
                             f"Please keep things respectful to maintain a positive environment!\n\n"
                             f"Offending word: {word}.\n"
                             f"Message: {message.content}.\n"
                             f"Sent by: {message.author}.\n"
                             f"Channel: {message.channel}.\n"
-                            f"Timestamp: {message.created_at}."
-                        ),
-                        author=message.author
-                    )
+                            f"Timestamp: {message.created_at}.",
+                    title="**Harmful language**",
+                    color=discord.Color.red())
                     await message.delete()
         else:
             await bot.process_commands(message)
