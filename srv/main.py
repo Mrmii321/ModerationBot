@@ -27,7 +27,23 @@ class Main:
         self.bot = bot_class_var
 
     async def get_flagged_categories(self, text):
-        """The actual AI part"""
+        """
+        Analyzes the given text for potentially harmful content using OpenAI's moderation API.
+
+        This method sends the input text to OpenAI's moderation service and processes the
+        response to identify any flagged categories of harmful content.
+
+        Args:
+            text (str): The text to be analyzed for harmful content.
+
+        Returns:
+            dict: A dictionary where keys are the names of flagged categories and values are
+                  boolean True. Only categories that are flagged are included in this dictionary.
+                  If no categories are flagged, an empty dictionary is returned.
+
+        Note:
+            This method logs the checked text using the logging module.
+        """
         response = self.client.moderations.create(
             model="omni-moderation-latest",
             input=text
@@ -37,6 +53,7 @@ class Main:
         flagged_categories = {category: flagged for category, flagged in results['categories'].items() if flagged}
         logging.info(f"Checked text {text}")
         return flagged_categories
+
 
     async def create_embed(self, message, author=None, title="", color=discord.Color.default()):
         embed = discord.Embed(description=message, color=color, title=title)
