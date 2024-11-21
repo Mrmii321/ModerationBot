@@ -56,10 +56,23 @@ class Main:
 
 
     async def create_embed(self, message, author=None, title="", color=discord.Color.default()):
+        """
+        Creates a Discord embed object with the specified content and style.
+
+        Args:
+            message (str): The main content of the embed.
+            author (discord.Member, optional): The author of the message. Defaults to None.
+            title (str, optional): The title of the embed. Defaults to an empty string.
+            color (discord.Color, optional): The color of the embed. Defaults to discord.Color.default().
+
+        Returns:
+            discord.Embed: The created embed object with the specified content and style.
+        """
         embed = discord.Embed(description=message, color=color, title=title)
         if author:
             embed.set_footer(text=f"Sent by: {author}")
         return embed
+
 
 
     async def send_embed(self, channel_id, *, message, author=None, title="Harmful message", color=discord.Color.red()):
@@ -88,11 +101,25 @@ class Main:
 
 
     async def send_dm(self, *, message, author):
+        """
+        Sends a direct message to a specified user.
+
+        This function checks if the user has an existing DM channel. If not, it creates one
+        and sends the provided message to the user.
+
+        Args:
+            message (str): The content of the message to be sent.
+            author (discord.Member): The user to whom the DM will be sent.
+
+        Returns:
+            None
+        """
         dm_channel = author.dm_channel
         if dm_channel is None:
             dm_channel = await author.create_dm()
         await dm_channel.send(message)
         logging.info(f"Sent DM to {author}: {message}")
+
 
     
     async def send_embed_dm(self, *, message, author, title="", color=discord.Color.default()):
