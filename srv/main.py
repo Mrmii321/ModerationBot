@@ -218,6 +218,20 @@ def setup_bot():
 
     @tasks.loop(hours=3)
     async def check_for_spammers(manual):
+        """
+        Checks the server for potential spammers and sends notifications.
+
+        This function iterates through all members of a specified guild and checks if any member
+        has been flagged as a spammer. If a spammer is found, an embedded message is sent to a
+        specified channel. The function can be triggered manually or automatically.
+
+        Args:
+            manual (bool): Indicates whether the check was initiated manually. If True, a log
+                           message and an embed are sent indicating a manual start.
+
+        Returns:
+            None
+        """
         if manual:
             logging.info("Started spammer check manually")
             await main.send_embed(channel_id=1250475863976312944, message="Started spammer check manually", title="**Spammer Check**", color=discord.Color.green())
@@ -238,8 +252,20 @@ def setup_bot():
                 logging.info(f"No suspicious accounts found.")
 
 
+
     async def send_embed(channel_id, message):
+        """
+        Sends an embedded message to a specified channel with a predefined title and color.
+
+        Args:
+            channel_id (int): The ID of the channel where the embed will be sent.
+            message (str): The content of the message to be included in the embed.
+
+        Returns:
+            None
+        """
         await main.send_embed(channel_id=channel_id, message=message, title="Harmful word in message", color=discord.Color.red())
+
 
 
     """Commands are from here below"""
