@@ -6,6 +6,7 @@ from discord.ext import commands, tasks
 from openai import OpenAI
 from database import database
 from sensitiveVariables import sensitiveVariables
+from ai import autoMod
 
 
 sensitivevariables = sensitiveVariables.SensitiveVariables()
@@ -44,6 +45,7 @@ class Main:
         Note:
             This method logs the checked text using the logging module.
         """
+        #TODO: make it show the certainty of the category being flagged
         response = self.client.moderations.create(
             model="omni-moderation-latest",
             input=text
