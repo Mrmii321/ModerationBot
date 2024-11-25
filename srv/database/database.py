@@ -5,8 +5,9 @@ logger = logging.getLogger(__name__)
 
 
 class MariaDB:
+    # TODO: make it use MySQL/mariaDB for myPhpAdmin
     def __init__(self):
-        self.db_path = r"logs.db"  # TODO update logs.db on filezilla
+        self.db_path = r"logs.db"
 
     async def log_filter(self, message, author, channel, time_sent, harmful_word):
         try:

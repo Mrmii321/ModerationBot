@@ -12,6 +12,7 @@ from ai import autoMod
 sensitivevariables = sensitiveVariables.SensitiveVariables()
 database = database.MariaDB()
 staff_roles = sensitivevariables.staff_roles
+automod = autoMod.AutoMod(sensitivevariables.OPENAI_key)
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[
@@ -26,35 +27,6 @@ class Main:
         # start=0 is the timestamp for when activity starts
         self.client = OpenAI(api_key=ai_key)
         self.bot = bot_class_var
-
-    async def get_flagged_categories(self, text):
-        """
-        Analyzes the given text for potentially harmful content using OpenAI's moderation API.
-
-        This method sends the input text to OpenAI's moderation service and processes the
-        response to identify any flagged categories of harmful content.
-
-        Args:
-            text (str): The text to be analyzed for harmful content.
-
-        Returns:
-            dict: A dictionary where keys are the names of flagged categories and values are
-                  boolean True. Only categories that are flagged are included in this dictionary.
-                  If no categories are flagged, an empty dictionary is returned.
-
-        Note:
-            This method logs the checked text using the logging module.
-        """
-        #TODO: make it show the certainty of the category being flagged
-        response = self.client.moderations.create(
-            model="omni-moderation-latest",
-            input=text
-            )
-        response_dict = response.model_dump()
-        results = response_dict['results'][0]
-        flagged_categories = {category: flagged for category, flagged in results['categories'].items() if flagged}
-        logging.info(f"Checked text {text}")
-        return flagged_categories
 
 
     async def create_embed(self, message, author=None, title="", color=discord.Color.default()):
@@ -74,7 +46,6 @@ class Main:
         if author:
             embed.set_footer(text=f"Sent by: {author}")
         return embed
-
 
 
     async def send_embed(self, channel_id, *, message, author=None, title="Harmful message", color=discord.Color.red()):
@@ -162,7 +133,6 @@ def setup_bot():
     main = Main(sensitivevariables.OPENAI_key, bot)
 
 
-
     @bot.event
     async def on_ready():
         """Logs in the bot."""
@@ -189,7 +159,7 @@ def setup_bot():
 
             """Part for AI mod"""
 
-            flagged_categories = await main.get_flagged_categories(text=message.content)
+            flagged_categories = automod.get_flagged_categories(text=message.content)
             if flagged_categories:
                 await main.send_embed(channel_id=1250475863976312944,
                                         message=f"Harmful message: {message.content}.\n"
@@ -198,13 +168,12 @@ def setup_bot():
                                                 f"Channel: {message.channel}.\n"
                                                 f"Timespamp: {message.created_at}.",
                                         author=message.author)
-                key = list(flagged_categories.keys())[0]
-
+                                        
                 await database.log_ai(message=message.content,
                                       author=message.author,
                                       channel=message.channel,
                                       time_sent=message.created_at,
-                                      flags=key.strip("''"))
+                                      flags=automod.flagged_categories.split(","))
 
             """Part for bad words list"""
 
