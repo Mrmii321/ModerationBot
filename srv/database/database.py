@@ -155,3 +155,22 @@ class MariaDB:
             db.close()
         except pymysql.MySQLError as e:
             logger.error(f"Database error: {e}")
+    
+
+    async def scan_database_for_word(self, word):
+        try:
+            db = self.connect_db()
+            cursor = db.cursor()
+
+            query = "SELECT * FROM messages WHERE message LIKE %s;"
+            cursor.execute(query, (f"%{word}%",))
+            
+            rows = cursor.fetchall()
+            
+            db.close()
+            
+            return rows
+        except pymysql.MySQLError as e:
+            logger.error(f"Database error while scanning for word '{word}': {e}")
+            return []
+        

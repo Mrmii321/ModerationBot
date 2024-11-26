@@ -324,7 +324,43 @@ def setup_bot():
     @bot.command(name="scan")
     @commands.has_any_role(*get_staff_role_ids())
     async def database_query_user(ctx):
+        """Check the database for messages from a specific user"""
         await database.retrieve_user_data(ctx=ctx)
+
+    
+    @bot.command(name="wordScan")
+    @commands.has_any_role(*get_staff_role_ids())
+    async def database_query_word(ctx, word):
+        """
+        Scans the database for messages containing a specific word.
+
+        This command searches the database for messages that contain the specified word
+        and returns the results to the user.
+
+        Args:
+            ctx (commands.Context): The context of the command invocation.
+            word (str): The word to search for in the database.
+
+        Returns:
+            None: This function sends messages to the Discord channel directly.
+
+        Usage:
+            !wordScan <word>
+
+        Example:
+            !wordScan hello
+        """
+        # Call the method without the ctx parameter
+        rows = await database.scan_database_for_word(word=word)
+
+        if rows:
+            # Format and send the results
+            results = "\n".join([str(row) for row in rows])
+            await ctx.send(f"Found the following messages:\n{results}")
+        else:
+            await ctx.send(f"No messages found containing the word '{word}'.")
+
+     
 
 
     return bot
