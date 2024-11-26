@@ -163,7 +163,8 @@ def setup_bot():
             if flagged_categories:
                 await main.send_embed(channel_id=1250475863976312944,
                                         message=f"Harmful message: {message.content}.\n"
-                                                f"Category: {flagged_categories}.\n "
+                                                f"Category: {automod.categories['flagged_categories']}.\n "
+                                                f"Scores: {automod.categories['category_scores']}\n"
                                                 f"Sent by: {message.author}.\n"
                                                 f"Channel: {message.channel}.\n"
                                                 f"Timespamp: {message.created_at}.",
@@ -173,7 +174,8 @@ def setup_bot():
                                       author=message.author,
                                       channel=message.channel,
                                       time_sent=message.created_at,
-                                      flags=automod.flagged_categories.split(","))
+                                      flags=automod.categories["flagged_categories"],
+                                      scores=automod.categories["category_scores"])
 
             """Part for bad words list"""
 

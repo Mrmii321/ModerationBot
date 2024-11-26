@@ -1,13 +1,11 @@
 from openai import OpenAI
-
+import json
 
 class AutoMod:
     def __init__(self, key):
         self.client = OpenAI(api_key=key)
-
-        self.flagged_categories = {}
-        self.category_scores = []
-
+        self.flagged_categories = []
+        self.category_scores = {}
 
     def get_flagged_categories(self, text):
         """
@@ -44,13 +42,16 @@ class AutoMod:
             for category in self.flagged_categories.keys()
         }
 
-        import json
         result = {
             "flagged_categories": self.flagged_categories,
             "category_scores": self.category_scores
         }
         print(json.dumps(result, indent=4))
-        return json.dumps(result, indent=4)
+        return result
 
-
-
+    @property
+    def categories(self):
+        return {
+            "flagged_categories": self.flagged_categories,
+            "category_scores": self.category_scores
+        }
