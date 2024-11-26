@@ -333,22 +333,6 @@ def setup_bot():
     async def database_query_word(ctx, word):
         """
         Scans the database for messages containing a specific word.
-
-        This command searches the database for messages that contain the specified word
-        and returns the results to the user.
-
-        Args:
-            ctx (commands.Context): The context of the command invocation.
-            word (str): The word to search for in the database.
-
-        Returns:
-            None: This function sends messages to the Discord channel directly.
-
-        Usage:
-            !wordScan <word>
-
-        Example:
-            !wordScan hello
         """
         # Call the method without the ctx parameter
         rows = await database.scan_database_for_word(word=word)
