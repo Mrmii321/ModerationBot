@@ -91,29 +91,36 @@ class Main:
         return embed
 
 
-    async def send_embed(self, channel_id, *, message, author=None, title="Harmful message", color=discord.Color.red()):
+    async def send_embed(self, *, channel_id=None, message, author=None, title="", color=discord.Color.default(), dm=False):
+        if not dm and channel_id is None:
+            raise ValueError("channel_id must be provided when dm is False.")
+        if dm and author is None:
+            raise ValueError("author must be provided when dm is True.")
         """
-        Send an embedded message to a specified channel.
-
-        This function creates and sends an embedded message to a Discord channel.
+        Send an embedded message to a specified channel or user.
 
         Args:
-            channel_id (int): The ID of the channel to send the embed to.
+            channel_id (int, optional): The ID of the channel to send the embed to. Defaults to None.
             message (str): The main content of the embed.
             author (discord.Member, optional): The author of the message. Defaults to None.
-            title (str, optional): The title of the embed. Defaults to "Harmful message".
-            color (discord.Color, optional): The color of the embed. Defaults to discord.Color.red().
+            title (str, optional): The title of the embed. Defaults to an empty string.
+            color (discord.Color, optional): The color of the embed. Defaults to discord.Color.default().
+            dm (bool, optional): Whether to send the embed as a DM. Defaults to False.
 
         Returns:
             None
-
-        Note:
-            This function logs the creation of the embed for a harmful message.
         """
-        channel = self.bot.get_channel(channel_id)
         embed = await self.create_embed(message=message, author=author, title=title, color=color)
-        await channel.send(embed=embed)  # Send the embed
-        logger.notice(f"Created Embed for harmful message {message}")
+        if dm:
+            dm_channel = author.dm_channel
+            if dm_channel is None:
+                dm_channel = await author.create_dm()
+            await dm_channel.send(embed=embed)
+            logger.info(f"Sent Embed DM to {author}: {message}")
+        else:
+            channel = self.bot.get_channel(channel_id)
+            await channel.send(embed=embed)
+            logger.notice(f"Created Embed for message {message}")
 
 
     async def send_dm(self, *, message, author):
@@ -135,33 +142,6 @@ class Main:
             dm_channel = await author.create_dm()
         await dm_channel.send(message)
         logger.info(f"Sent DM to {author}: {message}")
-
-
-    
-    async def send_embed_dm(self, *, message, author, title="", color=discord.Color.default()):
-        """
-        Send an embedded direct message to a user.
-
-        This function creates and sends an embedded message to a user's DM channel.
-
-        Args:
-            message (str): The main content of the embed.
-            author (discord.Member): The user to whom the DM will be sent.
-            title (str, optional): The title of the embed. Defaults to an empty string.
-            color (discord.Color, optional): The color of the embed. Defaults to discord.Color.default().
-
-        Returns:
-            None
-
-        Note:
-            This function logs the sending of the embed DM.
-        """
-        dm_channel = author.dm_channel
-        if dm_channel is None:
-            dm_channel = await author.create_dm()
-        embed = await self.create_embed(message=message, author=author, title=title, color=color)
-        await dm_channel.send(embed=embed)
-        logger.info(f"Sent Embed DM to {author}: {message}")
 
 
 
@@ -233,7 +213,7 @@ def setup_bot():
                                                     f"Message: {message.content}.\n "
                                                     f"Sent by: {message.author}.\n"
                                                     f"Channel: {message.channel}.\n"
-                                                    f"Timespamp: {message.created_at}.",
+                                                    f"Timestamp: {message.created_at}.",
                                             author=message.author,
                                             title="Harmful word in message",
                                             color=discord.Color.red())
@@ -244,7 +224,7 @@ def setup_bot():
                                               time_sent=message.created_at,
                                               harmful_word=word)
                     
-                    await main.send_embed_dm(author=message.author,
+                    await main.send_embed(author=message.author,
                      message=f"Hey {message.author}, your message goes against our community guidelines. "
                             f"Please keep things respectful to maintain a positive environment!\n\n"
                             f"Offending word: {word}.\n"
@@ -253,7 +233,8 @@ def setup_bot():
                             f"Channel: {message.channel}.\n"
                             f"Timestamp: {message.created_at}.",
                     title="**Harmful language**",
-                    color=discord.Color.red())
+                    color=discord.Color.red(),
+                    dm=True)
                     await message.delete()
         else:
             await bot.process_commands(message)
@@ -294,23 +275,6 @@ def setup_bot():
                                             message=f"User {member.mention} ({member.name}) has been flagged as suspicious.",
                                             title="**Suspicious Account**", color=discord.Color.red())
                     logger.info(f"User {member.name} has been flagged as potential spammer.")
-                    await member.ban(reason="Spammer detected")
-
-
-
-    async def send_embed(channel_id, message):
-        """
-        Sends an embedded message to a specified channel with a predefined title and color.
-
-        Args:
-            channel_id (int): The ID of the channel where the embed will be sent.
-            message (str): The content of the message to be included in the embed.
-
-        Returns:
-            None
-        """
-        await main.send_embed(channel_id=channel_id, message=message, title="Harmful word in message", color=discord.Color.red())
-
 
 
     """Commands are from here below"""

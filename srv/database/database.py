@@ -4,6 +4,7 @@ import json
 from dotenv import load_dotenv
 import os
 from sensitiveVariables import sensitiveVariables
+import asyncio
 
 sensitivevars = sensitiveVariables.SensitiveVariables()
 logger = logging.getLogger(__name__)
@@ -28,34 +29,33 @@ class MariaDB:
             "database": sensitivevars.database['database']
         }
 
-    def connect_db(self):
+    async def connect_db(self, retries=3):
         """
-        Establish a connection to the MariaDB database.
+        Establish a connection to the MariaDB database with retry logic.
+
+        Args:
+            retries (int): Number of retry attempts in case of connection failure. Defaults to 3.
 
         Returns:
-        - pymysql connection object
+            pymysql connection object
         """
-        # Validate that all required database connection parameters are present
-        if not self.db_data["password"]:
-            logger.error("DB_PASSWORD is missing or empty!")
-            raise ValueError("DB_PASSWORD is required but not provided.")
-
-        # Log the connection details (excluding the password)
-        logger.info("Attempting to connect to the database with the following details:")
-        logger.info(f"Host: {self.db_data['host']}")
-        logger.info(f"User: {self.db_data['user']}")
-        logger.info(f"Database: {self.db_data['database']}")
-
-        # Establish the connection
-        connection = pymysql.connect(
-            host=self.db_data["host"],
-            user=self.db_data["user"],
-            password=self.db_data["password"],
-            database=self.db_data["database"],
-        )
-
-        logger.info("Successfully connected to the database.")
-        return connection
+        attempt = 0
+        while attempt < retries:
+            try:
+                connection = pymysql.connect(
+                    host=self.db_data["host"],
+                    user=self.db_data["user"],
+                    password=self.db_data["password"],
+                    database=self.db_data["database"],
+                )
+                logger.info("Successfully connected to the database.")
+                return connection
+            except pymysql.MySQLError as e:
+                attempt += 1
+                logger.error(f"Database connection failed (attempt {attempt}/{retries}): {e}")
+                if attempt == retries:
+                    raise
+                await asyncio.sleep(2 ** attempt)  # Exponential backoff
 
     async def log_filter(self, message, author, channel, time_sent, harmful_word):
         """
