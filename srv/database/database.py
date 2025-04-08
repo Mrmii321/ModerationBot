@@ -83,7 +83,7 @@ class MariaDB:
                 "INSERT INTO messages (message, author, channel, time_sent, word) "
                 "VALUES (%s, %s, %s, %s, %s)"
             )
-            logging.info("Executing filter query")
+            logger.info("Executing filter query")
             cursor.execute(
                 insert_query, (message, author, channel, time_sent, harmful_word)
             )
@@ -122,7 +122,7 @@ class MariaDB:
                 "(message, author, channel, time_sent, flags, scores) "
                 "VALUES (%s, %s, %s, %s, %s, %s)"
             )
-            logging.info("Executing AI log query")
+            logger.info("Executing AI log query")
             cursor.execute(
                 insert_query, (message, author, channel, time_sent, flags, scores)
             )
@@ -146,7 +146,7 @@ class MariaDB:
 
             query = "SELECT * FROM messages WHERE author = %s;"
             cursor.execute(query, (author.name,))
-            logging.info(f"Retrieved data for user: {author.name}")
+            logger.info(f"Retrieved data for user: {author.name}")
 
             rows = cursor.fetchall()
             row_list = [row for row in rows]
@@ -158,19 +158,36 @@ class MariaDB:
     
 
     async def scan_database_for_word(self, word):
+        """
+        Scans the database for messages containing a specific word.
+
+        This function searches the 'messages' table in the database for any entries
+        where the 'message' column contains the specified word.
+
+        Parameters:
+        word (str): The word to search for in the database messages.
+
+        Returns:
+        list: A list of tuples, where each tuple represents a row from the database
+              that contains the specified word. Returns an empty list if no matches
+              are found or if there's a database error.
+
+        Raises:
+        pymysql.MySQLError: If there's an error in database connection or query execution.
+        """
         try:
             db = self.connect_db()
             cursor = db.cursor()
 
             query = "SELECT * FROM messages WHERE message LIKE %s;"
             cursor.execute(query, (f"%{word}%",))
-            
+
             rows = cursor.fetchall()
-            
+
             db.close()
-            
+
             return rows
         except pymysql.MySQLError as e:
             logger.error(f"Database error while scanning for word '{word}': {e}")
             return []
-        
+

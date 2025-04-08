@@ -7,6 +7,7 @@ from openai import OpenAI
 from database import database
 from sensitiveVariables import sensitiveVariables
 from ai import autoMod
+from colorama import Fore, Style
 
 
 sensitivevariables = sensitiveVariables.SensitiveVariables()
@@ -14,10 +15,52 @@ database = database.MariaDB()
 staff_roles = sensitivevariables.staff_roles
 automod = autoMod.AutoMod(sensitivevariables.OPENAI_key)
 
+# Define a new logging level for success messages
+SUCCESS_LEVEL_NUM = 25
+NOTICE_LEVEL_NUM = 24
+logging.addLevelName(SUCCESS_LEVEL_NUM, "SUCCESS")
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[
-    logging.StreamHandler()
-])
+def success(self, message, *args, **kws):
+    if self.isEnabledFor(SUCCESS_LEVEL_NUM):
+        self._log(SUCCESS_LEVEL_NUM, message, args, **kws)
+
+def notice(self, message, *args, **kws):
+    if self.isEnabledFor(NOTICE_LEVEL_NUM):
+        self._log(NOTICE_LEVEL_NUM, message, args, **kws)
+
+logging.Logger.success = success
+logging.Logger.notice = notice
+
+# Custom logging formatter to add colors to log messages based on their severity
+class CustomFormatter(logging.Formatter):
+    def format(self, record):
+        if record.levelno == logging.WARNING:  # If the log level is WARNING
+            record.msg = f"{Fore.YELLOW}{record.msg}{Style.RESET_ALL}"
+
+        elif record.levelno == logging.ERROR:  # If the log level is ERROR
+            record.msg = f"{Fore.RED}{record.msg}{Style.RESET_ALL}"
+
+        elif record.levelno == logging.DEBUG:  # If the log level is DEBUG
+            record.msg = f"{Fore.GREEN}{record.msg}{Style.RESET_ALL}" 
+
+        elif record.levelno == SUCCESS_LEVEL_NUM:
+            record.msg = f"{Fore.GREEN}{record.msg}{Style.RESET_ALL}"  # If the log level is SUCCESS
+        
+        elif record.levelno == NOTICE_LEVEL_NUM:
+            record.msg = f"{Fore.CYAN}{record.msg}{Style.RESET_ALL}"  # If the log level is NOTICE
+        return super().format(record)
+
+# Configure logging to include timestamps and log levels in the output
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s - %(pathname)s:%(lineno)d',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# Apply the custom formatter to all existing log handlers to ensure colored output
+for handler in logging.getLogger().handlers:
+    handler.setFormatter(CustomFormatter(handler.formatter._fmt))
+
 logger = logging.getLogger(__name__)
 
 
@@ -70,7 +113,7 @@ class Main:
         channel = self.bot.get_channel(channel_id)
         embed = await self.create_embed(message=message, author=author, title=title, color=color)
         await channel.send(embed=embed)  # Send the embed
-        logging.info(f"Created Embed for harmful message {message}")
+        logger.notice(f"Created Embed for harmful message {message}")
 
 
     async def send_dm(self, *, message, author):
@@ -91,7 +134,7 @@ class Main:
         if dm_channel is None:
             dm_channel = await author.create_dm()
         await dm_channel.send(message)
-        logging.info(f"Sent DM to {author}: {message}")
+        logger.info(f"Sent DM to {author}: {message}")
 
 
     
@@ -118,7 +161,7 @@ class Main:
             dm_channel = await author.create_dm()
         embed = await self.create_embed(message=message, author=author, title=title, color=color)
         await dm_channel.send(embed=embed)
-        logging.info(f"Sent Embed DM to {author}: {message}")
+        logger.info(f"Sent Embed DM to {author}: {message}")
 
 
 
@@ -137,7 +180,7 @@ def setup_bot():
     async def on_ready():
         """Logs in the bot."""
         tybalt_logs = bot.get_channel(982548416376750100)
-        logging.info(f"Logged in as {bot.user.name}")
+        logger.info(f"Logged in as {bot.user.name}")
         await bot.change_presence(activity=main.status)
         message = (
             f"AutoMod started up at <t:{start_time}>"
@@ -167,7 +210,7 @@ def setup_bot():
                                                 f"Scores: {automod.categories['category_scores']}\n"
                                                 f"Sent by: {message.author}.\n"
                                                 f"Channel: {message.channel}.\n"
-                                                f"Timespamp: {message.created_at}.",
+                                                f"Timestamp: {message.created_at}.",
                                         author=message.author)
                                         
                 await database.log_ai(message=message.content,
@@ -184,7 +227,7 @@ def setup_bot():
             words = message.content.split()
             for word in data:
                 if word in words:
-                    logging.info(f"Bad word ({word}) detected")
+                    logger.info(f"Bad word ({word}) detected")
                     await main.send_embed(channel_id=1250475863976312944,
                                             message=f"Offending word: {word}.\n"
                                                     f"Message: {message.content}.\n "
@@ -216,7 +259,7 @@ def setup_bot():
             await bot.process_commands(message)
 
 
-    @tasks.loop(hours=3)
+    @tasks.loop(minutes=1)
     async def check_for_spammers(manual):
         """
         Checks the server for potential spammers and sends notifications.
@@ -232,24 +275,26 @@ def setup_bot():
         Returns:
             None
         """
+        logger.notice(f"Started spammer check: manually?: {manual}")
         if manual:
-            logging.info("Started spammer check manually")
+            logger.notice("Started spammer check manually")
             await main.send_embed(channel_id=1250475863976312944, message="Started spammer check manually", title="**Spammer Check**", color=discord.Color.green())
         else:
-            logging.info("Started spammer check automatically")
+            logger.info("Started spammer check automatically")
         guild_id = bot.get_guild(272148882048155649)
         channel = bot.get_channel(1250475863976312944)
         members = guild_id.members
-        for member in members:
-
-            if member.public_flags.spammer:
-                await main.send_embed(channel_id=channel.id,
-                                        message=f"User {member.mention} ({member.name}) has been flagged as suspicious.",
-                                        title="**Suspicious Account**", color=discord.Color.red())
-                logging.info(f"User {member.name} has been flagged as potential spammer.")
-            if len(members) == 0 and manual:
-                await main.send_embed(channel_id=channel.id, message="No suspicious accounts found.", title="**No Suspicious Accounts**", color=discord.Color.green())
-                logging.info(f"No suspicious accounts found.")
+        if len(members) == 0 and manual:
+            await main.send_embed(channel_id=channel.id, message="No suspicious accounts found.", title="**No Suspicious Accounts**", color=discord.Color.green())
+            logger.info(f"No suspicious accounts found.")
+        else:
+            for member in members:
+                if member.public_flags.spammer:
+                    await main.send_embed(channel_id=channel.id,
+                                            message=f"User {member.mention} ({member.name}) has been flagged as suspicious.",
+                                            title="**Suspicious Account**", color=discord.Color.red())
+                    logger.info(f"User {member.name} has been flagged as potential spammer.")
+                    await member.ban(reason="Spammer detected")
 
 
 
@@ -287,7 +332,15 @@ def setup_bot():
     @bot.command(name="checkflags")
     @commands.has_any_role(*get_staff_role_ids())
     async def check_flags(ctx):
-        """Checks the flags of a user"""
+        """
+        Asynchronously checks and displays the flags of a user.
+        If a user is mentioned in the context message, retrieves and displays the flags of the mentioned user.
+        If no user is mentioned, retrieves and displays the flags of the message author.
+        Args:
+            ctx (commands.Context): The context in which the command was invoked.
+        Returns:
+            None
+        """
         if ctx.message.mentions:
             target = ctx.message.mentions[0]
             flag_list = []
@@ -299,7 +352,7 @@ def setup_bot():
                 flag_list
             )
             await main.send_embed(channel_id=ctx.channel.id, message=message, title=f"Flags of {target.name}", color=discord.Color.green())
-            logging.info(f"Presented tags of {target.name}")
+            logger.info(f"Presented tags of {target.name}")
         else:
             flag_list = []
             author = ctx.author
@@ -311,7 +364,7 @@ def setup_bot():
                 flag_list
             )
             await main.send_embed(channel_id=ctx.channel.id, message=message, title=f"Flags of {author.name}", color=discord.Color.green())
-            logging.info(f"Presented tags of {author.name}")
+            logger.info(f"Presented tags of {author.name}")
 
 
     @bot.command(name="spamcheck")
@@ -343,8 +396,6 @@ def setup_bot():
             await ctx.send(f"Found the following messages:\n{results}")
         else:
             await ctx.send(f"No messages found containing the word '{word}'.")
-
-     
 
 
     return bot
